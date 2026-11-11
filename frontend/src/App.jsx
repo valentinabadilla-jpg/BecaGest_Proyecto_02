@@ -5,6 +5,7 @@ import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 import { AuthContext } from './context/AuthContext'
 import ProtectedRoute from './routes/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
+import Asignaciones from './pages/Asignaciones'
 
 import Login from './pages/Login'
 import Estudiantes from './pages/Estudiantes'
@@ -102,11 +103,13 @@ function MenuPrincipal() {
                         />
                     } />
 
-                    <Route path="/asignaciones" element={
-                        <div>
-                            <h2>Asignaciones</h2>
-                            <p>Este módulo está pendiente de implementar.</p>
-                        </div>
+                   <Route path="/asignaciones" element={
+                        <Asignaciones
+                            token={token}
+                            esAdmin={esAdmin}
+                            esEncargado={esEncargado}
+                            esEstudiante={perfil?.grupos?.includes('Estudiante') === true}
+                        />
                     } />
 
                 </Routes>

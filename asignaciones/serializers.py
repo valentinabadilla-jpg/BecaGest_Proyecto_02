@@ -4,9 +4,29 @@ from .models import Asignacion
 
 class AsignacionSerializer(serializers.ModelSerializer):
 
+    estudiante_nombre = serializers.SerializerMethodField()
+
+    estudiante_carrera = serializers.CharField(
+        source='evaluacion.solicitud.estudiante.carrera',
+        read_only=True
+    )
+
+    def get_estudiante_nombre(self, obj):
+        estudiante = obj.evaluacion.solicitud.estudiante
+
+        return estudiante.nombre + ' ' + estudiante.apellidos
+
     class Meta:
         model = Asignacion
-        fields = '__all__'
+        fields = [
+            'id',
+            'evaluacion',
+            'monto_mensual',
+            'fecha_asignacion',
+            'estado',
+            'estudiante_nombre',
+            'estudiante_carrera'
+        ]
 
         read_only_fields = [
             'id',
