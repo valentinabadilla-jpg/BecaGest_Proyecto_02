@@ -1,198 +1,135 @@
 
-import { useState } from "react";
-import Estudiantes from "./pages/Estudiantes";
-import Convocatorias from "./pages/Convocatorias";
+import { useContext } from 'react'
+import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 
-const BASE_URL = (
-  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
-).replace(/\/$/, "");
+import { AuthContext } from './context/AuthContext'
+import ProtectedRoute from './routes/ProtectedRoute'
 
-export default function App() {
-  const [usuario, setUsuario] = useState("");
-  const [password, setPassword] = useState("");
-  const [token, setToken] = useState("");
-  const [perfil, setPerfil] = useState(null);
-  const [pantalla, setPantalla] = useState("estudiantes");
-  const [error, setError] = useState("");
-  const [cargando, setCargando] = useState(false);
+import Login from './pages/Login'
+import Estudiantes from './pages/Estudiantes'
+import Convocatorias from './pages/Convocatorias'
 
-  const esAdmin = perfil?.es_admin === true;
+function MenuPrincipal() {
 
-  const esEncargado =
-    esAdmin || perfil?.grupos?.includes("Encargado") === true;
+    const {
+        perfil,
+        token,
+        esAdmin,
+        esEncargado,
+        cerrarSesion
+    } = useContext(AuthContext)
 
-  const esEstudiante =
-    perfil?.grupos?.includes("Estudiante") === true;
+    const navigate = useNavigate()
 
-  async function iniciarSesion(e) {
-    e.preventDefault();
-    setError("");
-    setCargando(true);
+    let nombreRol = 'Sin rol asignado'
 
-    try {
-      const respuesta = await fetch(`${BASE_URL}/api/token/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          username: usuario,
-          password
-        })
-      });
-
-      const datos = await respuesta.json();
-
-      if (!respuesta.ok || !datos.token) {
-        throw new Error("Usuario o contraseña incorrectos.");
-      }
-
-      const respuestaPerfil = await fetch(
-        `${BASE_URL}/api/perfil/`,
-        {
-          headers: {
-            Authorization: `Token ${datos.token}`
-          }
-        }
-      );
-
-      if (!respuestaPerfil.ok) {
-        throw new Error("No se pudo consultar el perfil del usuario.");
-      }
-
-      const datosPerfil = await respuestaPerfil.json();
-
-      setPerfil(datosPerfil);
-      setToken(datos.token);
-      setPassword("");
-
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setCargando(false);
+    if (esAdmin) {
+        nombreRol = 'Administrador'
+    } else if (esEncargado) {
+        nombreRol = 'Encargado'
+    } else if (perfil?.grupos?.includes('Estudiante')) {
+        nombreRol = 'Estudiante'
     }
-  }
 
-  function cerrarSesion() {
-    setUsuario("");
-    setPassword("");
-    setToken("");
-    setPerfil(null);
-    setPantalla("estudiantes");
-    setError("");
-  }
+    function salir() {
+        cerrarSesion()
+        navigate('/login')
+    }
 
-  if (!token) {
     return (
-      <div className="container mt-5">
-        <h1 className="text-center mb-4">BecaGest</h1>
+        <div>
+            <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+                <div className="container">
 
-        <div
-          className="card p-4 mx-auto"
-          style={{ maxWidth: "400px" }}
-        >
-          <h3>Iniciar sesión</h3>
+                    <Link className="navbar-brand" to="/">
+                        BecaGest
+                    </Link>
 
-          {error && (
-            <div className="alert alert-danger">
-              {error}
+                    <div className="navbar-nav me-auto">
+
+                        <Link className="nav-link" to="/">
+                            Inicio
+                        </Link>
+
+                        <Link className="nav-link" to="/estudiantes">
+                            Estudiantes
+                        </Link>
+
+                        <Link className="nav-link" to="/convocatorias">
+                            Convocatorias
+                        </Link>
+
+                        <Link className="nav-link" to="/asignaciones">
+                            Asignaciones
+                        </Link>
+
+                    </div>
+
+                    <span className="navbar-text me-3">
+                        {perfil?.username} | {nombreRol}
+                    </span>
+
+                    <button
+                        className="btn btn-danger btn-sm"
+                        onClick={salir}
+                    >
+                        Cerrar sesión
+                    </button>
+
+                </div>
+            </nav>
+
+            <div className="container mt-4">
+                <Routes>
+
+                    <Route path="/" element={
+                        <div>
+                            <h2>Dashboard</h2>
+                            <p>Bienvenido a BecaGest.</p>
+                        </div>
+                    } />
+
+                    <Route path="/estudiantes" element={
+                        <Estudiantes
+                            token={token}
+                            esAdmin={esAdmin}
+                            esEncargado={esEncargado}
+                        />
+                    } />
+
+                    <Route path="/convocatorias" element={
+                        <Convocatorias
+                            token={token}
+                            esAdmin={esAdmin}
+                        />
+                    } />
+
+                    <Route path="/asignaciones" element={
+                        <div>
+                            <h2>Asignaciones</h2>
+                            <p>Este módulo está pendiente de implementar.</p>
+                        </div>
+                    } />
+
+                </Routes>
             </div>
-          )}
-
-          <form onSubmit={iniciarSesion}>
-            <label className="form-label">Usuario</label>
-
-            <input
-              className="form-control mb-3"
-              value={usuario}
-              onChange={(e) => setUsuario(e.target.value)}
-              required
-            />
-
-            <label className="form-label">Contraseña</label>
-
-            <input
-              type="password"
-              className="form-control mb-3"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-
-            <button
-              className="btn btn-primary w-100"
-              type="submit"
-              disabled={cargando}
-            >
-              {cargando ? "Ingresando..." : "Iniciar sesión"}
-            </button>
-          </form>
         </div>
-      </div>
-    );
-  }
-
-  let nombreRol = "Sin rol asignado";
-
-  if (esAdmin) {
-    nombreRol = "Administrador";
-  } else if (esEncargado) {
-    nombreRol = "Encargado";
-  } else if (esEstudiante) {
-    nombreRol = "Estudiante";
-  }
-
-  return (
-    <div>
-      <div className="container mt-4">
-        <h1 className="text-center">BecaGest</h1>
-
-        <p className="text-center mb-1">
-          Bienvenido: {perfil?.username}
-        </p>
-
-        <p className="text-center">
-          Perfil: {nombreRol}
-        </p>
-
-        <div className="text-center mb-4">
-          <button
-            className="btn btn-primary me-2 mb-2"
-            onClick={() => setPantalla("estudiantes")}
-          >
-            Estudiantes
-          </button>
-
-          <button
-            className="btn btn-success me-2 mb-2"
-            onClick={() => setPantalla("convocatorias")}
-          >
-            Convocatorias
-          </button>
-
-          <button
-            className="btn btn-danger mb-2"
-            onClick={cerrarSesion}
-          >
-            Cerrar sesión
-          </button>
-        </div>
-      </div>
-
-      {pantalla === "estudiantes" && (
-        <Estudiantes
-          token={token}
-          esAdmin={esAdmin}
-          esEncargado={esEncargado}
-        />
-      )}
-
-      {pantalla === "convocatorias" && (
-        <Convocatorias
-          token={token}
-          esAdmin={esAdmin}
-        />
-      )}
-    </div>
-  );
+    )
 }
+
+function App() {
+
+    return (
+        <Routes>
+
+            <Route path="/login" element={<Login />} />
+
+            <Route element={<ProtectedRoute />}>
+                <Route path="/*" element={<MenuPrincipal />} />
+            </Route>
+
+        </Routes>
+    )
+}
+
+export default App
