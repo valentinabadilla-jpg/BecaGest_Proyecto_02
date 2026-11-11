@@ -4,6 +4,7 @@ import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 
 import { AuthContext } from './context/AuthContext'
 import ProtectedRoute from './routes/ProtectedRoute'
+import Dashboard from './pages/Dashboard'
 
 import Login from './pages/Login'
 import Estudiantes from './pages/Estudiantes'
@@ -83,10 +84,7 @@ function MenuPrincipal() {
                 <Routes>
 
                     <Route path="/" element={
-                        <div>
-                            <h2>Dashboard</h2>
-                            <p>Bienvenido a BecaGest.</p>
-                        </div>
+                        <Dashboard token={token} />
                     } />
 
                     <Route path="/estudiantes" element={
