@@ -10,6 +10,8 @@ import Asignaciones from './pages/Asignaciones'
 import Login from './pages/Login'
 import Estudiantes from './pages/Estudiantes'
 import Convocatorias from './pages/Convocatorias'
+import Solicitudes from './pages/Solicitudes'
+import Evaluaciones from './pages/Evaluaciones'
 
 function MenuPrincipal() {
 
@@ -65,6 +67,14 @@ function MenuPrincipal() {
                             Asignaciones
                         </Link>
 
+                        <Link className="nav-link" to="/solicitudes">
+                            Solicitudes
+                        </Link>
+
+                        <Link className="nav-link" to="/evaluaciones">
+                            Evaluaciones
+                        </Link>
+
                     </div>
 
                     <span className="navbar-text me-3">
@@ -109,6 +119,18 @@ function MenuPrincipal() {
                             esAdmin={esAdmin}
                             esEncargado={esEncargado}
                             esEstudiante={perfil?.grupos?.includes('Estudiante') === true}
+                        />
+                    } />
+
+                        <Route path="/solicitudes" element={
+                        <Solicitudes
+                            token={token}
+                        />
+                    } />
+
+                    <Route path="/evaluaciones" element={
+                        <Evaluaciones
+                            token={token}
                         />
                     } />
 
