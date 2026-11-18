@@ -7,7 +7,17 @@ BecaGest es una API REST desarrollada con Python, Django y Django REST Framework
 
 El sistema utiliza MySQL como base de datos y autenticación mediante tokens para controlar el acceso de los usuarios.
 
+El sistema está compuesto por dos partes:
+
+Backend: desarrollado con Python, Django y Django REST Framework. Procesa la información, aplica las reglas del sistema, valida los permisos y se comunica con la base de datos.
+
+Frontend: desarrollado con React, Vite y Bootstrap. Proporciona la interfaz desde la cual los usuarios inician sesión y utilizan los módulos disponibles.
+
+La información se almacena en MySQL. El frontend se comunica con el backend mediante una API REST y utiliza tokens para acceder a las operaciones protegidas.
+
 2. TECNOLOGÍAS UTILIZADAS
+
+Backend
 
 Python
 Django 6.1.2
@@ -17,6 +27,15 @@ mysqlclient 2.3.0
 python-dotenv 1.2.4
 Postman
 Visual Studio Code
+
+Frontend
+
+React 19.3.1
+React DOM 19.3.1
+Vite 8.3.6
+React Router DOM 7.18.5
+Bootstrap 5.3.8
+JavaScript
 
 3. MÓDULOS DEL SISTEMA
 
@@ -29,6 +48,32 @@ Solicitudes: permite registrar y consultar solicitudes de becas.
 Evaluaciones: permite aprobar o rechazar solicitudes.
 
 Asignaciones: administra las becas asignadas y sus montos mensuales.
+
+3.1. FUNCIONALIDAD DE CADA MÓDULO
+
+1. Dashboard
+
+Es la pantalla principal del sistema y permite visualizar un resumen general de la gestión de becas. Presenta información relacionada con los estudiantes, convocatorias, solicitudes, evaluaciones y asignaciones. Facilita consultar el estado general del proceso sin tener que ingresar individualmente a cada módulo.
+
+2. Estudiantes
+
+Permite administrar la información de los estudiantes registrados en el sistema. Contiene los datos necesarios para identificarlos, como número de identificación, nombre, apellidos y carrera. Esta información se utiliza para relacionar a cada estudiante con sus respectivas solicitudes de beca.
+
+3. Convocatorias
+
+Permite crear, consultar y administrar las convocatorias de becas. En este módulo se registra el nombre de la convocatoria, su descripción, las fechas de inicio y finalización, los cupos disponibles y su estado. Su función es organizar las oportunidades de beca a las que pueden aplicar los estudiantes.
+
+4. Solicitudes
+
+Permite registrar y consultar las solicitudes de beca presentadas por los estudiantes. Cada solicitud se relaciona con un estudiante y una convocatoria. También permite dar seguimiento al estado de las solicitudes durante el proceso de revisión y aprobación.
+
+5. Evaluaciones
+
+Permite revisar las solicitudes presentadas por los estudiantes. El encargado puede consultar la información correspondiente y registrar el resultado de la evaluación, indicando si la solicitud es aprobada o rechazada, según las reglas establecidas en el sistema.
+
+6. Asignaciones
+
+Permite registrar y administrar las becas otorgadas a los estudiantes cuyas solicitudes fueron aprobadas. Contiene la información relacionada con la asignación y el monto de la beca. Este módulo permite consultar las becas concedidas y mantener un registro de los beneficios asignados.
 
 4. ROLES DE USUARIO
 
@@ -60,6 +105,15 @@ Activar el entorno virtual:
 
 python -m pip install -r requirements.txt
 
+5.4. Instalar las dependencias del frontend
+
+Abrir otra terminal, ingresar a la carpeta frontend e instalar las dependencias:
+
+cd frontend
+npm install
+
+Este comando instala las dependencias necesarias para ejecutar React y Vite.
+
 6. CONFIGURACIÓN DE MYSQL
 
 Abrir MySQL Workbench y crear la base de datos:
@@ -88,6 +142,8 @@ Cada integrante debe colocar la contraseña correspondiente a su instalación de
 
 El archivo .env contiene información privada y no debe subirse a GitHub.
 
+
+
 8. MIGRACIONES
 
 Ejecutar:
@@ -114,7 +170,53 @@ http://127.0.0.1:8000/admin/
 
 Desde el administrador se pueden crear los grupos Administrador, Encargado y Estudiante, asignar permisos y registrar usuarios de prueba.
 
-10. ENDPOINTS PRINCIPALES
+10. EJECUTAR EL FRONTEND
+
+El frontend debe iniciarse desde una terminal diferente a la que ejecuta Django.
+
+Ingresar a la carpeta frontend:
+
+cd frontend
+
+Si todavía no se instalaron las dependencias:
+
+npm install
+
+Iniciar el servidor de desarrollo:
+
+npm run dev
+
+Vite mostrará la dirección local de la aplicación, normalmente:
+
+http://localhost:5173/
+
+Abrir esa dirección en el navegador para utilizar BecaGest.
+
+10.1. Ejecución completa del sistema
+
+Para utilizar BecaGest se deben mantener dos terminales abiertas:
+
+Terminal 1 – Backend
+
+Desde la carpeta principal:
+
+.\.venv\Scripts\Activate.ps1
+python manage.py runserver
+
+Terminal 2 – Frontend
+
+Desde la carpeta principal:
+
+cd frontend
+npm run dev
+
+Finalmente, abrir en el navegador:
+
+http://localhost:5173/
+
+MySQL también debe estar funcionando para que el sistema pueda consultar y guardar información.
+
+11. ENDPOINTS PRINCIPALES
 
 POST /api/token/
 Obtener token de autenticación.
@@ -164,7 +266,7 @@ Los endpoints de detalle utilizan un identificador, por ejemplo:
 
 Las operaciones de consulta, actualización y eliminación dependen de los permisos asignados a cada usuario.
 
-11. PRUEBAS AUTOMATIZADAS
+12. PRUEBAS AUTOMATIZADAS
 
 El proyecto cuenta con 20 pruebas automatizadas distribuidas entre los cinco módulos.
 
@@ -174,7 +276,7 @@ python manage.py test
 
 Django utiliza una base de datos temporal para realizar las pruebas sin modificar los registros principales.
 
-12. PRUEBAS MANUALES CON POSTMAN
+13. PRUEBAS MANUALES CON POSTMAN
 
 El sistema se prueba mediante Postman para verificar las operaciones CRUD, autenticación, autorización, filtros, búsquedas, ordenamiento, paginación y reglas de negocio.
 
@@ -189,7 +291,7 @@ Se comprueban los siguientes códigos HTTP:
 404 Not Found
 409 Conflict
 
-13. FLUJO DE FUNCIONAMIENTO
+14. FLUJO DE FUNCIONAMIENTO
 
 1. El administrador registra una convocatoria de becas.
 2. El estudiante registra una solicitud.
@@ -198,7 +300,7 @@ Se comprueban los siguientes códigos HTTP:
 5. Si la solicitud es aprobada y existen cupos disponibles, se registra la asignación.
 6. El encargado puede consultar los reportes del sistema.
 
-14. SEGURIDAD
+15. SEGURIDAD
 
 BecaGest utiliza autenticación mediante tokens y tres grupos de usuarios.
 
@@ -208,7 +310,7 @@ Las credenciales de conexión a MySQL se almacenan en el archivo .env.
 
 El archivo .gitignore debe impedir que las contraseñas, tokens y archivos privados se incluyan en el repositorio.
 
-15. LIMITACIONES
+16. LIMITACIONES
 
 BecaGest es un proyecto académico desarrollado como una API REST.
 
