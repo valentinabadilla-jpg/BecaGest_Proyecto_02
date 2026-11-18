@@ -1,16 +1,77 @@
-# React + Vite
+BecaGest – Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+1. Descripción
 
-Currently, two official plugins are available:
+BecaGest es una aplicación web desarrollada con React que permite gestionar información relacionada con el sistema de becas estudiantiles.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+El frontend consume los servicios de una API REST desarrollada con Django REST Framework.
 
-## React Compiler
+2. Tecnologías utilizadas
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+React
 
-## Expanding the ESLint configuration
+JavaScript
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Vite
+
+React Router DOM
+
+Bootstrap 5
+
+Fetch API
+
+3. Requisitos
+
+Para ejecutar el proyecto se necesita:
+
+Node.js
+
+npm
+
+El backend de BecaGest en funcionamiento.
+
+4. Instalación
+
+Abrir una terminal dentro de la carpeta frontend.
+
+Instalar las dependencias:
+
+npm install
+
+5. Configuración
+
+Crear un archivo llamado .env dentro de la carpeta frontend.
+
+Agregar la siguiente variable:
+
+VITE_API_URL=http://127.0.0.1:8000
+
+Esta variable indica la dirección donde se encuentra funcionando el backend.
+
+6. Ejecución
+
+Para iniciar el frontend, ejecutar:
+
+npm run dev
+
+Después, abrir en el navegador la dirección que proporciona Vite, normalmente:
+
+http://localhost:5173/
+
+7. Funcionalidades principales
+
+Inicio y cierre de sesión mediante autenticación con token.
+
+Protección de rutas según la autenticación.
+
+Dashboard con información obtenida desde la API.
+
+Gestión de estudiantes.
+
+Gestión de convocatorias.
+
+Gestión de asignaciones.
+
+Las funcionalidades de Solicitudes y Evaluaciones se integrarán como parte del desarrollo conjunto del proyecto.
+
+8. Estructura del frontend
