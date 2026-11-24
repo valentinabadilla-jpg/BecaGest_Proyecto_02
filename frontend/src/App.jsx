@@ -1,6 +1,5 @@
-
 import { useContext } from 'react'
-import { Routes, Route, Link, useNavigate } from 'react-router-dom'
+import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom'
 
 import { AuthContext } from './context/AuthContext'
 import ProtectedRoute from './routes/ProtectedRoute'
@@ -16,12 +15,13 @@ import Evaluaciones from './pages/Evaluaciones'
 function MenuPrincipal() {
 
     const {
-        perfil,
-        token,
-        esAdmin,
-        esEncargado,
-        cerrarSesion
-    } = useContext(AuthContext)
+    perfil,
+    token,
+    esAdmin,
+    esEncargado,
+    esEstudiante,
+    cerrarSesion
+} = useContext(AuthContext)
 
     const navigate = useNavigate()
 
@@ -95,7 +95,12 @@ function MenuPrincipal() {
                 <Routes>
 
                     <Route path="/" element={
-                        <Dashboard token={token} />
+                        <Dashboard
+                            token={token}
+                            esAdmin={esAdmin}
+                            esEncargado={esEncargado}
+                            esEstudiante={esEstudiante}
+                        />
                     } />
 
                     <Route path="/estudiantes" element={
@@ -141,11 +146,15 @@ function MenuPrincipal() {
 }
 
 function App() {
+    const { token } = useContext(AuthContext)
 
     return (
         <Routes>
 
-            <Route path="/login" element={<Login />} />
+            <Route
+                path="/login"
+                element={token ? <Navigate to="/" replace /> : <Login />}
+            />
 
             <Route element={<ProtectedRoute />}>
                 <Route path="/*" element={<MenuPrincipal />} />
