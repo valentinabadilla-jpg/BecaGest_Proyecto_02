@@ -1,9 +1,11 @@
-
 import { useEffect, useState } from "react";
+import { BASE_URL, peticionAPI } from "../services/api";
 
-const BASE_URL = (
-  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
-).replace(/\/$/, "");
+import Alertas from "../components/Alertas";
+import EstadoCarga from "../components/EstadoCarga";
+import Paginacion from "../components/Paginacion";
+import Tabla from "../components/Tabla";
+import Formulario from "../components/Formulario";
 
 const API_URL = `${BASE_URL}/api/convocatorias/`;
 
@@ -66,23 +68,28 @@ export default function Convocatorias({ token, esAdmin }) {
 
   const [cargando, setCargando] = useState(false);
   const [procesando, setProcesando] = useState(false);
+
   const [error, setError] = useState("");
   const [errorLista, setErrorLista] = useState("");
   const [mensaje, setMensaje] = useState("");
+
   const [actualizar, setActualizar] = useState(0);
 
-  // CARGAR CONVOCATORIAS DESDE DJANGO
+  // CARGAR CONVOCATORIAS
 
   useEffect(() => {
+
     if (!token) return;
 
     const controlador = new AbortController();
 
     async function cargarConvocatorias() {
+
       setCargando(true);
       setErrorLista("");
 
       try {
+
         const parametros = new URLSearchParams();
 
         parametros.set("page", pagina);
@@ -100,7 +107,7 @@ export default function Convocatorias({ token, esAdmin }) {
           parametros.set("abierta", "si");
         }
 
-        const respuesta = await fetch(
+        const respuesta = await peticionAPI(
           `${API_URL}?${parametros}`,
           {
             headers: {
@@ -134,6 +141,7 @@ export default function Convocatorias({ token, esAdmin }) {
         setAnterior(Boolean(datos.previous));
 
       } catch (err) {
+
         if (err.name !== "AbortError") {
           setErrorLista(err.message);
           setConvocatorias([]);
@@ -141,6 +149,7 @@ export default function Convocatorias({ token, esAdmin }) {
         }
 
       } finally {
+
         if (!controlador.signal.aborted) {
           setCargando(false);
         }
@@ -164,6 +173,7 @@ export default function Convocatorias({ token, esAdmin }) {
   // CAMBIAR CAMPOS DEL FORMULARIO
 
   function cambio(e) {
+
     const { name, value, type, checked } = e.target;
 
     setFormulario({
@@ -175,6 +185,7 @@ export default function Convocatorias({ token, esAdmin }) {
   // CANCELAR EDICION
 
   function cancelar() {
+
     setFormulario(inicial);
     setEditandoId(null);
   }
@@ -182,6 +193,7 @@ export default function Convocatorias({ token, esAdmin }) {
   // EDITAR CONVOCATORIA
 
   function editar(convocatoria) {
+
     setEditandoId(convocatoria.id);
 
     setFormulario({
@@ -195,23 +207,33 @@ export default function Convocatorias({ token, esAdmin }) {
 
     setError("");
     setMensaje("");
+
     window.scrollTo(0, 0);
   }
 
-  // GUARDAR O ACTUALIZAR
+  // GUARDAR O ACTUALIZAR CONVOCATORIA
 
   async function guardar(e) {
+
     e.preventDefault();
 
     if (!esAdmin) return;
 
     if (formulario.fecha_fin < formulario.fecha_inicio) {
-      setError("La fecha final no puede ser anterior a la inicial.");
+
+      setError(
+        "La fecha final no puede ser anterior a la inicial."
+      );
+
       return;
     }
 
     if (Number(formulario.cupos) <= 0) {
-      setError("Los cupos deben ser mayores que cero.");
+
+      setError(
+        "Los cupos deben ser mayores que cero."
+      );
+
       return;
     }
 
@@ -220,6 +242,7 @@ export default function Convocatorias({ token, esAdmin }) {
     setMensaje("");
 
     try {
+
       const editando = editandoId !== null;
 
       const datosEnviar = {
@@ -231,14 +254,16 @@ export default function Convocatorias({ token, esAdmin }) {
         activa: formulario.activa
       };
 
-      const respuesta = await fetch(
+      const respuesta = await peticionAPI(
         editando ? `${API_URL}${editandoId}/` : API_URL,
         {
           method: editando ? "PATCH" : "POST",
+
           headers: {
             "Content-Type": "application/json",
             Authorization: `Token ${token}`
           },
+
           body: JSON.stringify(datosEnviar)
         }
       );
@@ -263,9 +288,11 @@ export default function Convocatorias({ token, esAdmin }) {
       setActualizar(n => n + 1);
 
     } catch (err) {
+
       setError(err.message);
 
     } finally {
+
       setProcesando(false);
     }
   }
@@ -273,6 +300,7 @@ export default function Convocatorias({ token, esAdmin }) {
   // ELIMINAR CONVOCATORIA
 
   async function eliminar(id) {
+
     if (
       !esAdmin ||
       !window.confirm("¿Deseas eliminar esta convocatoria?")
@@ -285,14 +313,20 @@ export default function Convocatorias({ token, esAdmin }) {
     setMensaje("");
 
     try {
-      const respuesta = await fetch(`${API_URL}${id}/`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Token ${token}`
+
+      const respuesta = await peticionAPI(
+        `${API_URL}${id}/`,
+        {
+          method: "DELETE",
+
+          headers: {
+            Authorization: `Token ${token}`
+          }
         }
-      });
+      );
 
       if (!respuesta.ok) {
+
         const datos = await respuesta.json().catch(() => ({}));
 
         throw new Error(
@@ -300,167 +334,200 @@ export default function Convocatorias({ token, esAdmin }) {
         );
       }
 
-      if (editandoId === id) cancelar();
+      if (editandoId === id) {
+        cancelar();
+      }
 
-      setMensaje("Convocatoria eliminada correctamente.");
+      setMensaje(
+        "Convocatoria eliminada correctamente."
+      );
 
       if (convocatorias.length === 1 && pagina > 1) {
+
         setPagina(p => p - 1);
       }
 
       setActualizar(n => n + 1);
 
     } catch (err) {
+
       setError(err.message);
 
     } finally {
+
       setProcesando(false);
     }
   }
 
+  // COLUMNAS DE LA TABLA
+
+  const columnas = [
+    "ID",
+    "Nombre",
+    "Descripción",
+    "Fecha inicio",
+    "Fecha fin",
+    "Cupos",
+    "Activa"
+  ];
+
+  if (esAdmin) {
+    columnas.push("Acciones");
+  }
+
   return (
+
     <div className="container mt-4 mb-5">
+
       <h2>Convocatorias</h2>
+
       <p>Consulta de convocatorias de BecaGest</p>
 
-      {error && (
-        <div className="alert alert-danger">{error}</div>
-      )}
+      {/* COMPONENTE REUTILIZABLE DE ALERTAS */}
 
-      {errorLista && (
-        <div className="alert alert-danger">{errorLista}</div>
-      )}
+      <Alertas error={error} />
 
-      {mensaje && (
-        <div className="alert alert-success">{mensaje}</div>
-      )}
+      <Alertas
+        error={errorLista}
+        mensaje={mensaje}
+      />
 
-      {/* FORMULARIO SOLO PARA ADMINISTRADOR */}
+      {/* COMPONENTE REUTILIZABLE DE FORMULARIO */}
 
       {esAdmin && (
-        <div className="card p-3 mb-4">
-          <h4>
-            {editandoId !== null
+
+        <Formulario
+          titulo={
+            editandoId !== null
               ? "Editar convocatoria"
-              : "Registrar convocatoria"}
-          </h4>
+              : "Registrar convocatoria"
+          }
+          onSubmit={guardar}
+        >
 
-          <form onSubmit={guardar}>
-            <label className="form-label">
-              Nombre
-            </label>
+          <label className="form-label">
+            Nombre
+          </label>
+
+          <input
+            className="form-control mb-2"
+            name="nombre"
+            value={formulario.nombre}
+            onChange={cambio}
+            maxLength="120"
+            required
+          />
+
+          <label className="form-label">
+            Descripción
+          </label>
+
+          <textarea
+            className="form-control mb-2"
+            name="descripcion"
+            value={formulario.descripcion}
+            onChange={cambio}
+            maxLength="250"
+            required
+          />
+
+          <label className="form-label">
+            Fecha de inicio
+          </label>
+
+          <input
+            type="date"
+            className="form-control mb-2"
+            name="fecha_inicio"
+            value={formulario.fecha_inicio}
+            onChange={cambio}
+            required
+          />
+
+          <label className="form-label">
+            Fecha de finalización
+          </label>
+
+          <input
+            type="date"
+            className="form-control mb-2"
+            name="fecha_fin"
+            min={formulario.fecha_inicio || undefined}
+            value={formulario.fecha_fin}
+            onChange={cambio}
+            required
+          />
+
+          <label className="form-label">
+            Cupos disponibles
+          </label>
+
+          <input
+            type="number"
+            className="form-control mb-2"
+            name="cupos"
+            min="1"
+            step="1"
+            value={formulario.cupos}
+            onChange={cambio}
+            required
+          />
+
+          <div className="form-check mb-3">
 
             <input
-              className="form-control mb-2"
-              name="nombre"
-              value={formulario.nombre}
+              type="checkbox"
+              className="form-check-input"
+              id="convocatoria-activa"
+              name="activa"
+              checked={formulario.activa}
               onChange={cambio}
-              maxLength="120"
-              required
             />
 
-            <label className="form-label">
-              Descripción
+            <label
+              className="form-check-label"
+              htmlFor="convocatoria-activa"
+            >
+              Convocatoria activa
             </label>
 
-            <textarea
-              className="form-control mb-2"
-              name="descripcion"
-              value={formulario.descripcion}
-              onChange={cambio}
-              maxLength="250"
-              required
-            />
+          </div>
 
-            <label className="form-label">
-              Fecha de inicio
-            </label>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={procesando}
+          >
 
-            <input
-              type="date"
-              className="form-control mb-2"
-              name="fecha_inicio"
-              value={formulario.fecha_inicio}
-              onChange={cambio}
-              required
-            />
+            {procesando
+              ? "Procesando..."
+              : editandoId !== null
+                ? "Actualizar"
+                : "Guardar convocatoria"}
 
-            <label className="form-label">
-              Fecha de finalización
-            </label>
+          </button>
 
-            <input
-              type="date"
-              className="form-control mb-2"
-              name="fecha_fin"
-              min={formulario.fecha_inicio || undefined}
-              value={formulario.fecha_fin}
-              onChange={cambio}
-              required
-            />
-
-            <label className="form-label">
-              Cupos disponibles
-            </label>
-
-            <input
-              type="number"
-              className="form-control mb-2"
-              name="cupos"
-              min="1"
-              step="1"
-              value={formulario.cupos}
-              onChange={cambio}
-              required
-            />
-
-            <div className="form-check mb-3">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                id="convocatoria-activa"
-                name="activa"
-                checked={formulario.activa}
-                onChange={cambio}
-              />
-
-              <label
-                className="form-check-label"
-                htmlFor="convocatoria-activa"
-              >
-                Convocatoria activa
-              </label>
-            </div>
+          {editandoId !== null && (
 
             <button
-              type="submit"
-              className="btn btn-primary"
+              type="button"
+              className="btn btn-secondary ms-2"
+              onClick={cancelar}
               disabled={procesando}
             >
-              {procesando
-                ? "Procesando..."
-                : editandoId !== null
-                  ? "Actualizar"
-                  : "Guardar convocatoria"}
+              Cancelar
             </button>
 
-            {editandoId !== null && (
-              <button
-                type="button"
-                className="btn btn-secondary ms-2"
-                onClick={cancelar}
-                disabled={procesando}
-              >
-                Cancelar
-              </button>
-            )}
-          </form>
-        </div>
+          )}
+
+        </Formulario>
+
       )}
 
       {/* BUSQUEDA, FILTROS Y ORDENAMIENTO */}
 
       <div className="card p-3 mb-4">
+
         <h4>Buscar y filtrar convocatorias</h4>
 
         <label className="form-label">
@@ -489,9 +556,11 @@ export default function Convocatorias({ token, esAdmin }) {
             setPagina(1);
           }}
         >
+
           <option value="">Todas</option>
           <option value="true">Activas</option>
           <option value="false">Inactivas</option>
+
         </select>
 
         <label className="form-label">
@@ -506,10 +575,13 @@ export default function Convocatorias({ token, esAdmin }) {
             setPagina(1);
           }}
         >
+
           <option value="">Todas</option>
+
           <option value="si">
             Solo abiertas actualmente
           </option>
+
         </select>
 
         <label className="form-label">
@@ -524,117 +596,124 @@ export default function Convocatorias({ token, esAdmin }) {
             setPagina(1);
           }}
         >
-          <option value="id">ID ascendente</option>
-          <option value="-id">ID descendente</option>
-          <option value="nombre">Nombre A-Z</option>
-          <option value="-nombre">Nombre Z-A</option>
+
+          <option value="id">
+            ID ascendente
+          </option>
+
+          <option value="-id">
+            ID descendente
+          </option>
+
+          <option value="nombre">
+            Nombre A-Z
+          </option>
+
+          <option value="-nombre">
+            Nombre Z-A
+          </option>
+
           <option value="fecha_fin">
             Fecha final ascendente
           </option>
+
           <option value="-fecha_fin">
             Fecha final descendente
           </option>
+
         </select>
+
       </div>
 
       {/* LISTA DE CONVOCATORIAS */}
 
       <h4>Lista de convocatorias</h4>
 
-      <p>Total de convocatorias encontradas: {total}</p>
+      <p>
+        Total de convocatorias encontradas: {total}
+      </p>
 
-      {cargando ? (
-        <p>Cargando convocatorias...</p>
+      {/* COMPONENTE REUTILIZABLE DE ESTADO DE CARGA */}
 
-      ) : errorLista ? (
-        <p>No se pudieron cargar las convocatorias.</p>
+      <EstadoCarga
+        cargando={cargando}
+        error={errorLista}
+        vacio={convocatorias.length === 0}
+        mensajeCarga="Cargando convocatorias..."
+        mensajeVacio="No hay convocatorias para mostrar."
+      >
 
-      ) : convocatorias.length === 0 ? (
-        <div className="alert alert-info">
-          No hay convocatorias para mostrar.
-        </div>
+        {/* COMPONENTE REUTILIZABLE DE TABLA */}
 
-      ) : (
-        <div className="table-responsive">
-          <table className="table table-striped table-bordered">
-            <thead className="table-dark">
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Fecha inicio</th>
-                <th>Fecha fin</th>
-                <th>Cupos</th>
-                <th>Activa</th>
-                {esAdmin && <th>Acciones</th>}
-              </tr>
-            </thead>
+        <Tabla columnas={columnas}>
 
-            <tbody>
-              {convocatorias.map(convocatoria => (
-                <tr key={convocatoria.id}>
-                  <td>{convocatoria.id}</td>
-                  <td>{convocatoria.nombre}</td>
-                  <td>{convocatoria.descripcion}</td>
-                  <td>{convocatoria.fecha_inicio}</td>
-                  <td>{convocatoria.fecha_fin}</td>
-                  <td>{convocatoria.cupos}</td>
-                  <td>
-                    {convocatoria.activa ? "Sí" : "No"}
-                  </td>
+          {convocatorias.map(convocatoria => (
 
-                  {esAdmin && (
-                    <td>
-                      <button
-                        className="btn btn-warning btn-sm me-2 mb-1"
-                        onClick={() =>
-                          editar(convocatoria)
-                        }
-                        disabled={procesando}
-                      >
-                        Editar
-                      </button>
+            <tr key={convocatoria.id}>
 
-                      <button
-                        className="btn btn-danger btn-sm mb-1"
-                        onClick={() =>
-                          eliminar(convocatoria.id)
-                        }
-                        disabled={procesando}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              <td>{convocatoria.id}</td>
 
-      {/* PAGINACION */}
+              <td>{convocatoria.nombre}</td>
 
-      <div className="d-flex align-items-center gap-2 mt-3">
-        <button
-          className="btn btn-secondary"
-          disabled={!anterior || cargando}
-          onClick={() => setPagina(p => p - 1)}
-        >
-          Anterior
-        </button>
+              <td>{convocatoria.descripcion}</td>
 
-        <span>Página {pagina}</span>
+              <td>{convocatoria.fecha_inicio}</td>
 
-        <button
-          className="btn btn-primary"
-          disabled={!siguiente || cargando}
-          onClick={() => setPagina(p => p + 1)}
-        >
-          Siguiente
-        </button>
-      </div>
+              <td>{convocatoria.fecha_fin}</td>
+
+              <td>{convocatoria.cupos}</td>
+
+              <td>
+                {convocatoria.activa ? "Sí" : "No"}
+              </td>
+
+              {esAdmin && (
+
+                <td>
+
+                  <button
+                    className="btn btn-warning btn-sm me-2 mb-1"
+                    onClick={() =>
+                      editar(convocatoria)
+                    }
+                    disabled={procesando}
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    className="btn btn-danger btn-sm mb-1"
+                    onClick={() =>
+                      eliminar(convocatoria.id)
+                    }
+                    disabled={procesando}
+                  >
+                    Eliminar
+                  </button>
+
+                </td>
+
+              )}
+
+            </tr>
+
+          ))}
+
+        </Tabla>
+
+      </EstadoCarga>
+
+      {/* COMPONENTE REUTILIZABLE DE PAGINACION */}
+
+      <Paginacion
+        pagina={pagina}
+        anterior={anterior}
+        siguiente={siguiente}
+        cargando={cargando}
+        onAnterior={() => setPagina(p => p - 1)}
+        onSiguiente={() => setPagina(p => p + 1)}
+      />
+
     </div>
   );
 }
-

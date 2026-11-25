@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { BASE_URL, peticionAPI } from "../services/api";
 
-const BASE_URL = (
-  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
-).replace(/\/$/, "");
+import Alertas from "../components/Alertas";
+import EstadoCarga from "../components/EstadoCarga";
+import Tabla from "../components/Tabla";
+import Formulario from "../components/Formulario";
 
 const API_URL = `${BASE_URL}/api/evaluaciones/`;
 const API_SOLICITUDES = `${BASE_URL}/api/solicitudes/`;
@@ -35,9 +37,10 @@ const CAMPOS = {
   observaciones: "Observaciones"
 };
 
-// Convierte los mensajes en inglés de DRF y los mensajes de evaluación
-// única en textos comprensibles para el usuario.
+// TRADUCIR MENSAJES DE ERROR
+
 function traducir(texto) {
+
   const t = String(texto);
 
   if (/already exists|unique/i.test(t)) {
@@ -81,32 +84,47 @@ function traducir(texto) {
   return t;
 }
 
+// MANEJO DE ERRORES HTTP
+
 function obtenerError(datos, estado) {
+
   const contenido = datos || {};
 
-  if (estado === 401) return "Debes iniciar sesión.";
+  if (estado === 401) {
+    return "Debes iniciar sesión.";
+  }
 
   if (estado === 403) {
     return (
       contenido.error ||
       contenido.detail ||
-      "No tienes permiso para evaluar solicitudes."
+      "No tienes permiso para realizar esta operación."
     );
   }
 
-  if (estado === 404) return "Registro no encontrado.";
+  if (estado === 404) {
+    return "Registro no encontrado.";
+  }
 
   if (estado === 409) {
-    return contenido.error || "No se puede completar la operación.";
+    return (
+      contenido.error ||
+      "No se puede completar la operación."
+    );
   }
 
   const errores = Object.entries(contenido).map(
     ([campo, mensaje]) => {
-      const texto = (Array.isArray(mensaje) ? mensaje : [mensaje])
+
+      const texto = (
+        Array.isArray(mensaje) ? mensaje : [mensaje]
+      )
         .map(traducir)
         .join(", ");
 
-      return CAMPOS[campo] ? `${CAMPOS[campo]}: ${texto}` : texto;
+      return CAMPOS[campo]
+        ? `${CAMPOS[campo]}: ${texto}`
+        : texto;
     }
   );
 
@@ -114,20 +132,27 @@ function obtenerError(datos, estado) {
 }
 
 function crearError(datos, estado) {
-  const error = new Error(obtenerError(datos, estado));
+
+  const error = new Error(
+    obtenerError(datos, estado)
+  );
+
   error.estado = estado;
+
   return error;
 }
 
 function mensajeError(err) {
+
   if (err instanceof TypeError) {
-    return "No se pudo conectar con el servidor. Verifica que Django esté en ejecución.";
+    return "No se pudo conectar con el servidor.";
   }
 
   return err.message;
 }
 
 async function leerJson(respuesta) {
+
   try {
     return await respuesta.json();
   } catch {
@@ -135,12 +160,16 @@ async function leerJson(respuesta) {
   }
 }
 
-// Lee un listado que puede venir paginado o como arreglo simple.
+// CARGAR LISTADOS
+
 async function cargarListado(url, token, signal) {
-  const respuesta = await fetch(url, {
+
+  const respuesta = await peticionAPI(url, {
+
     headers: {
       Authorization: `Token ${token}`
     },
+
     signal
   });
 
@@ -150,22 +179,30 @@ async function cargarListado(url, token, signal) {
     throw crearError(datos, respuesta.status);
   }
 
-  return Array.isArray(datos) ? datos : datos.results || [];
+  return Array.isArray(datos)
+    ? datos
+    : datos.results || [];
 }
 
-// Recorre todas las páginas de un listado paginado de la API.
+// CARGAR TODAS LAS PAGINAS
+
 async function cargarTodas(url, token, signal) {
+
   const resultados = [];
 
   let siguiente = `${url}?page_size=50`;
 
   while (siguiente) {
-    const respuesta = await fetch(siguiente, {
-      headers: {
-        Authorization: `Token ${token}`
-      },
-      signal
-    });
+
+    const respuesta = await peticionAPI(
+      siguiente,
+      {
+        headers: {
+          Authorization: `Token ${token}`
+        },
+        signal
+      }
+    );
 
     const datos = await leerJson(respuesta);
 
@@ -173,14 +210,29 @@ async function cargarTodas(url, token, signal) {
       throw crearError(datos, respuesta.status);
     }
 
+    if (Array.isArray(datos)) {
+
+      resultados.push(...datos);
+
+      break;
+    }
+
     resultados.push(...(datos.results || []));
+
     siguiente = datos.next;
   }
 
   return resultados;
 }
 
-export default function Evaluaciones({ token }) {
+export default function Evaluaciones({
+  token,
+  esAdmin,
+  esEncargado,
+  esEstudiante
+}) {
+
+  const puedeEvaluar = esAdmin || esEncargado;
 
   const [evaluaciones, setEvaluaciones] = useState([]);
   const [solicitudes, setSolicitudes] = useState([]);
@@ -188,7 +240,11 @@ export default function Evaluaciones({ token }) {
   const [convocatorias, setConvocatorias] = useState([]);
 
   const [formulario, setFormulario] = useState(inicial);
-  const [ultimaEvaluacion, setUltimaEvaluacion] = useState(null);
+
+  const [
+    ultimaEvaluacion,
+    setUltimaEvaluacion
+  ] = useState(null);
 
   const [cargando, setCargando] = useState(false);
   const [procesando, setProcesando] = useState(false);
@@ -198,7 +254,8 @@ export default function Evaluaciones({ token }) {
 
   const [actualizar, setActualizar] = useState(0);
 
-  // Cargar evaluaciones, solicitudes, estudiantes y convocatorias
+  // CARGAR DATOS DESDE DJANGO
+
   useEffect(() => {
 
     if (!token) return;
@@ -211,16 +268,38 @@ export default function Evaluaciones({ token }) {
       setErrorCarga("");
 
       try {
+
         const [
           listaEvaluaciones,
           listaSolicitudes,
           listaEstudiantes,
           listaConvocatorias
         ] = await Promise.all([
-          cargarListado(API_URL, token, controlador.signal),
-          cargarListado(API_SOLICITUDES, token, controlador.signal),
-          cargarTodas(API_ESTUDIANTES, token, controlador.signal),
-          cargarTodas(API_CONVOCATORIAS, token, controlador.signal)
+
+          cargarListado(
+            API_URL,
+            token,
+            controlador.signal
+          ),
+
+          cargarTodas(
+            API_SOLICITUDES,
+            token,
+            controlador.signal
+          ),
+
+          cargarTodas(
+            API_ESTUDIANTES,
+            token,
+            controlador.signal
+          ),
+
+          cargarTodas(
+            API_CONVOCATORIAS,
+            token,
+            controlador.signal
+          )
+
         ]);
 
         setEvaluaciones(listaEvaluaciones);
@@ -229,10 +308,13 @@ export default function Evaluaciones({ token }) {
         setConvocatorias(listaConvocatorias);
 
       } catch (err) {
+
         if (err.name !== "AbortError") {
           setErrorCarga(mensajeError(err));
         }
+
       } finally {
+
         if (!controlador.signal.aborted) {
           setCargando(false);
         }
@@ -245,37 +327,62 @@ export default function Evaluaciones({ token }) {
 
   }, [token, actualizar]);
 
+  // CLASIFICAR SOLICITUDES
+
   const solicitudesPendientes = solicitudes.filter(
-    (solicitud) => solicitud.estado === "PENDIENTE"
+    solicitud => solicitud.estado === "PENDIENTE"
   );
 
   const solicitudesEvaluadas = solicitudes.filter(
-    (solicitud) => solicitud.estado !== "PENDIENTE"
+    solicitud => solicitud.estado !== "PENDIENTE"
   );
 
+  // OBTENER NOMBRE DEL ESTUDIANTE
+
   function nombreEstudiante(id) {
-    const estudiante = estudiantes.find((e) => e.id === Number(id));
+
+    const estudiante = estudiantes.find(
+      e => e.id === Number(id)
+    );
 
     return estudiante
       ? `${estudiante.nombre} ${estudiante.apellidos}`
       : `Estudiante ${id}`;
   }
 
-  function nombreConvocatoria(id) {
-    const convocatoria = convocatorias.find((c) => c.id === Number(id));
+  // OBTENER NOMBRE DE LA CONVOCATORIA
 
-    return convocatoria ? convocatoria.nombre : `Convocatoria ${id}`;
+  function nombreConvocatoria(id) {
+
+    const convocatoria = convocatorias.find(
+      c => c.id === Number(id)
+    );
+
+    return convocatoria
+      ? convocatoria.nombre
+      : `Convocatoria ${id}`;
   }
 
+  // BUSCAR SOLICITUD
+
   function buscarSolicitud(id) {
-    return solicitudes.find((s) => s.id === Number(id));
+
+    return solicitudes.find(
+      s => s.id === Number(id)
+    );
   }
 
   function etiquetaSolicitud(solicitud) {
-    return `Solicitud ${solicitud.id} - ${nombreEstudiante(solicitud.estudiante)} - ${nombreConvocatoria(solicitud.convocatoria)}`;
+
+    return `Solicitud ${solicitud.id} - ${nombreEstudiante(
+      solicitud.estudiante
+    )} - ${nombreConvocatoria(solicitud.convocatoria)}`;
   }
 
+  // CAMBIAR CAMPOS DEL FORMULARIO
+
   function cambio(e) {
+
     const { name, value } = e.target;
 
     setFormulario({
@@ -284,44 +391,72 @@ export default function Evaluaciones({ token }) {
     });
   }
 
+  // LIMPIAR FORMULARIO
+
   function cancelar() {
+
     setFormulario(inicial);
   }
 
-  // Consulta el estado real de la solicitud después de evaluarla
+  // CONSULTAR ESTADO DE LA SOLICITUD
+
   async function consultarEstadoSolicitud(id) {
+
     try {
-      const respuesta = await fetch(`${API_SOLICITUDES}${id}/`, {
-        headers: {
-          Authorization: `Token ${token}`
+
+      const respuesta = await peticionAPI(
+        `${API_SOLICITUDES}${id}/`,
+        {
+          headers: {
+            Authorization: `Token ${token}`
+          }
         }
-      });
+      );
 
       const datos = await leerJson(respuesta);
 
       return respuesta.ok ? datos.estado : null;
 
     } catch {
+
       return null;
     }
   }
+
+  // REGISTRAR EVALUACION
 
   async function guardar(e) {
 
     e.preventDefault();
 
+    setError("");
+    setUltimaEvaluacion(null);
+
     if (!token) {
+
       setError("Debes iniciar sesión.");
+
+      return;
+    }
+
+    if (!puedeEvaluar) {
+
+      setError("No tienes permiso para evaluar solicitudes.");
+
       return;
     }
 
     if (!formulario.solicitud) {
+
       setError("Debes seleccionar una solicitud.");
+
       return;
     }
 
     if (!formulario.resultado) {
+
       setError("Debes seleccionar un resultado.");
+
       return;
     }
 
@@ -333,35 +468,49 @@ export default function Evaluaciones({ token }) {
       puntaje < 0 ||
       puntaje > 100
     ) {
-      setError("El puntaje debe ser un número entero entre 0 y 100.");
+
+      setError(
+        "El puntaje debe ser un número entero entre 0 y 100."
+      );
+
       return;
     }
 
     if (!formulario.observaciones.trim()) {
-      setError("Debes escribir las observaciones de la evaluación.");
+
+      setError(
+        "Debes escribir las observaciones de la evaluación."
+      );
+
       return;
     }
 
-    const solicitud = buscarSolicitud(formulario.solicitud);
+    const solicitud = buscarSolicitud(
+      formulario.solicitud
+    );
 
     setProcesando(true);
-    setError("");
-    setUltimaEvaluacion(null);
 
     try {
-      const respuesta = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`
-        },
-        body: JSON.stringify({
-          solicitud: Number(formulario.solicitud),
-          resultado: formulario.resultado,
-          puntaje: puntaje,
-          observaciones: formulario.observaciones.trim()
-        })
-      });
+
+      const respuesta = await peticionAPI(
+        API_URL,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${token}`
+          },
+
+          body: JSON.stringify({
+            solicitud: Number(formulario.solicitud),
+            resultado: formulario.resultado,
+            puntaje: puntaje,
+            observaciones: formulario.observaciones.trim()
+          })
+        }
+      );
 
       const datos = await leerJson(respuesta);
 
@@ -374,106 +523,183 @@ export default function Evaluaciones({ token }) {
       );
 
       setUltimaEvaluacion({
+
         solicitud: datos.solicitud,
+
         estudiante: solicitud
           ? nombreEstudiante(solicitud.estudiante)
           : "",
+
         convocatoria: solicitud
           ? nombreConvocatoria(solicitud.convocatoria)
           : "",
+
         resultado: datos.resultado,
+
         puntaje: datos.puntaje,
-        estadoAnterior: solicitud ? solicitud.estado : "PENDIENTE",
+
+        estadoAnterior: solicitud
+          ? solicitud.estado
+          : "PENDIENTE",
+
         estadoNuevo: estadoNuevo
+
       });
 
       cancelar();
+
       setActualizar(n => n + 1);
 
     } catch (err) {
+
       setError(mensajeError(err));
 
-      // Se actualizan las listas para mostrar el estado real
-      // de la solicitud.
       setActualizar(n => n + 1);
 
     } finally {
+
       setProcesando(false);
     }
   }
 
+  // COLUMNAS DE LA TABLA
+
+  const columnas = [
+    "ID",
+    "Solicitud",
+    "Estudiante",
+    "Convocatoria",
+    "Resultado",
+    "Puntaje",
+    "Observaciones",
+    "Fecha de evaluación",
+    "Estado actual de la solicitud"
+  ];
+
   return (
+
     <div className="container mt-4 mb-5">
 
-      <h2>Evaluaciones</h2>
-      <p>Revisión de solicitudes de beca por el personal autorizado</p>
+      <h2>
+        {puedeEvaluar
+          ? "Evaluaciones"
+          : "Mis evaluaciones"}
+      </h2>
 
-      {error && (
-        <div className="alert alert-danger">
-          {error}
+      <p>
+        {puedeEvaluar
+          ? "Revisión de solicitudes de beca por el personal autorizado."
+          : "Consulta de los resultados de tus solicitudes de beca."}
+      </p>
+
+      {/* COMPONENTE REUTILIZABLE DE ALERTAS */}
+
+      <Alertas error={error} />
+
+      <Alertas error={errorCarga} />
+
+      {/* INFORMACION PARA ESTUDIANTES */}
+
+      {esEstudiante && !puedeEvaluar && (
+
+        <div className="alert alert-info">
+
+          Puedes consultar tus evaluaciones y conocer
+          el resultado de tus solicitudes de beca.
+
+          El registro de evaluaciones corresponde al
+          personal autorizado.
+
         </div>
+
       )}
 
-      {errorCarga && (
-        <div className="alert alert-danger">
-          {errorCarga}
-        </div>
-      )}
+      {/* RESULTADO DE LA ULTIMA EVALUACION */}
 
-      {ultimaEvaluacion && (
+      {puedeEvaluar && ultimaEvaluacion && (
+
         <div className="alert alert-success">
 
           <h5 className="alert-heading">
+
             Evaluación registrada correctamente
+
           </h5>
 
           <p className="mb-1">
+
             Solicitud {ultimaEvaluacion.solicitud}
+
             {ultimaEvaluacion.estudiante &&
               `: ${ultimaEvaluacion.estudiante}`}
+
             {ultimaEvaluacion.convocatoria &&
               ` - ${ultimaEvaluacion.convocatoria}`}
+
           </p>
 
           <p className="mb-1">
+
             Resultado:{" "}
+
             <span
               className={`badge ${
-                CLASES_ESTADO[ultimaEvaluacion.resultado] || "bg-secondary"
+                CLASES_ESTADO[ultimaEvaluacion.resultado] ||
+                "bg-secondary"
               }`}
             >
+
               {ESTADOS[ultimaEvaluacion.resultado] ||
                 ultimaEvaluacion.resultado}
+
             </span>
+
             {" "}con un puntaje de {ultimaEvaluacion.puntaje} de 100.
+
           </p>
 
           <p className="mb-2">
-            Estado de la solicitud:{" "}
+
+            Estado anterior de la solicitud:{" "}
+
             <span
               className={`badge ${
                 CLASES_ESTADO[ultimaEvaluacion.estadoAnterior] ||
                 "bg-secondary"
               }`}
             >
+
               {ESTADOS[ultimaEvaluacion.estadoAnterior] ||
                 ultimaEvaluacion.estadoAnterior}
+
             </span>
-            {" "}cambió a{" "}
+
+          </p>
+
+          <p className="mb-2">
+
+            Estado actual:{" "}
+
             {ultimaEvaluacion.estadoNuevo ? (
+
               <span
                 className={`badge ${
                   CLASES_ESTADO[ultimaEvaluacion.estadoNuevo] ||
                   "bg-secondary"
                 }`}
               >
+
                 {ESTADOS[ultimaEvaluacion.estadoNuevo] ||
                   ultimaEvaluacion.estadoNuevo}
+
               </span>
+
             ) : (
-              "un nuevo estado (actualiza la lista para verlo)"
+
+              "No se pudo consultar. Actualiza la lista para verificarlo."
+
             )}
-            .
+
           </p>
 
           <button
@@ -481,32 +707,46 @@ export default function Evaluaciones({ token }) {
             className="btn btn-outline-secondary btn-sm"
             onClick={() => setUltimaEvaluacion(null)}
           >
+
             Cerrar
+
           </button>
 
         </div>
+
       )}
 
       {!token && (
+
         <div className="alert alert-warning">
+
           Debes iniciar sesión para utilizar este módulo.
+
         </div>
+
       )}
 
-      <div className="card p-3 mb-4">
+      {/* FORMULARIO SOLO PARA ADMINISTRADOR Y ENCARGADO */}
 
-        <h4>Evaluar solicitud</h4>
+      {puedeEvaluar && (
 
-        <p className="text-muted">
-          Solo el personal autorizado puede evaluar solicitudes.
-          Cada solicitud se evalúa una sola vez y su estado cambia
-          según el resultado.
-        </p>
+        <Formulario
+          titulo="Evaluar solicitud"
+          onSubmit={guardar}
+        >
 
-        <form onSubmit={guardar}>
+          <p className="text-muted">
+
+            Solo el personal autorizado puede evaluar solicitudes.
+            Cada solicitud se evalúa una sola vez y su estado cambia
+            según el resultado.
+
+          </p>
 
           <label className="form-label">
+
             Solicitud
+
           </label>
 
           <select
@@ -517,63 +757,91 @@ export default function Evaluaciones({ token }) {
             disabled={!token || cargando}
             required
           >
+
             <option value="">
+
               Seleccionar solicitud
+
             </option>
 
             {solicitudesPendientes.length > 0 && (
+
               <optgroup label="Pendientes de evaluar">
-                {solicitudesPendientes.map((solicitud) => (
+
+                {solicitudesPendientes.map(solicitud => (
+
                   <option
                     key={solicitud.id}
                     value={solicitud.id}
                   >
+
                     {etiquetaSolicitud(solicitud)}
+
                   </option>
+
                 ))}
+
               </optgroup>
+
             )}
 
             {solicitudesEvaluadas.length > 0 && (
+
               <optgroup label="Ya evaluadas">
-                {solicitudesEvaluadas.map((solicitud) => (
+
+                {solicitudesEvaluadas.map(solicitud => (
+
                   <option
                     key={solicitud.id}
                     value={solicitud.id}
                   >
+
                     {`${etiquetaSolicitud(solicitud)} (${
-                      ESTADOS[solicitud.estado] || solicitud.estado
+                      ESTADOS[solicitud.estado] ||
+                      solicitud.estado
                     })`}
+
                   </option>
+
                 ))}
+
               </optgroup>
+
             )}
+
           </select>
 
           <div className="mb-2">
+
             <button
               type="button"
               className="btn btn-outline-secondary btn-sm"
               onClick={() => setActualizar(n => n + 1)}
               disabled={!token || cargando}
             >
+
               Actualizar lista de solicitudes
+
             </button>
+
           </div>
 
-          {!cargando &&
-            !errorCarga &&
-            token &&
-            solicitudes.length === 0 && (
-              <div className="alert alert-info">
-                No hay solicitudes para evaluar.
-                Registra una solicitud en el módulo Solicitudes
-                y actualiza la lista.
-              </div>
-            )}
+          {token && (
+
+            <EstadoCarga
+              cargando={cargando}
+              error={errorCarga}
+              vacio={solicitudes.length === 0}
+              mensajeCarga="Cargando solicitudes..."
+              mensajeVacio="No hay solicitudes para evaluar. Registra una solicitud en el módulo Solicitudes y actualiza la lista."
+            />
+
+          )}
 
           <label className="form-label">
+
             Resultado
+
           </label>
 
           <select
@@ -583,15 +851,31 @@ export default function Evaluaciones({ token }) {
             onChange={cambio}
             required
           >
+
             <option value="">
+
               Seleccionar resultado
+
             </option>
-            <option value="APROBADA">Aprobada</option>
-            <option value="RECHAZADA">Rechazada</option>
+
+            <option value="APROBADA">
+
+              Aprobada
+
+            </option>
+
+            <option value="RECHAZADA">
+
+              Rechazada
+
+            </option>
+
           </select>
 
           <label className="form-label">
+
             Puntaje (0 a 100)
+
           </label>
 
           <input
@@ -607,7 +891,9 @@ export default function Evaluaciones({ token }) {
           />
 
           <label className="form-label">
+
             Observaciones
+
           </label>
 
           <textarea
@@ -626,10 +912,16 @@ export default function Evaluaciones({ token }) {
             disabled={
               !token ||
               procesando ||
+              cargando ||
+              !!errorCarga ||
               solicitudes.length === 0
             }
           >
-            {procesando ? "Procesando..." : "Guardar evaluación"}
+
+            {procesando
+              ? "Procesando..."
+              : "Guardar evaluación"}
+
           </button>
 
           <button
@@ -638,104 +930,130 @@ export default function Evaluaciones({ token }) {
             onClick={cancelar}
             disabled={procesando}
           >
+
             Limpiar
+
           </button>
 
-        </form>
-      </div>
+        </Formulario>
 
-      <h4>Lista de evaluaciones</h4>
+      )}
 
-      <p>Total de evaluaciones encontradas: {evaluaciones.length}</p>
+      {/* LISTA DE EVALUACIONES */}
 
-      {cargando ? (
-        <p>Cargando evaluaciones...</p>
-      ) : !token ? (
+      <h4>
+        {puedeEvaluar
+          ? "Lista de evaluaciones"
+          : "Mis resultados"}
+      </h4>
+
+      <p>
+
+        Total de evaluaciones mostradas: {evaluaciones.length}
+
+      </p>
+
+      {!token ? (
+
         <p>Inicia sesión para consultar los registros.</p>
-      ) : evaluaciones.length === 0 ? (
-        <div className="alert alert-info">
-          No hay evaluaciones para mostrar.
-        </div>
+
       ) : (
-        <div className="table-responsive">
 
-          <table className="table table-striped table-bordered">
+        <EstadoCarga
+          cargando={cargando}
+          error={errorCarga}
+          vacio={evaluaciones.length === 0}
+          mensajeCarga="Cargando evaluaciones..."
+          mensajeVacio="No hay evaluaciones para mostrar."
+        >
 
-            <thead className="table-dark">
-              <tr>
-                <th>ID</th>
-                <th>Solicitud</th>
-                <th>Estudiante</th>
-                <th>Convocatoria</th>
-                <th>Resultado</th>
-                <th>Puntaje</th>
-                <th>Observaciones</th>
-                <th>Fecha de evaluación</th>
-                <th>Estado actual de la solicitud</th>
-              </tr>
-            </thead>
+          <Tabla columnas={columnas}>
 
-            <tbody>
-              {evaluaciones.map((evaluacion) => {
+            {evaluaciones.map(evaluacion => {
 
-                const solicitud = buscarSolicitud(evaluacion.solicitud);
+              const solicitud = buscarSolicitud(
+                evaluacion.solicitud
+              );
 
-                return (
-                  <tr key={evaluacion.id}>
+              return (
 
-                    <td>{evaluacion.id}</td>
-                    <td>{evaluacion.solicitud}</td>
+                <tr key={evaluacion.id}>
 
-                    <td>
-                      {solicitud
-                        ? nombreEstudiante(solicitud.estudiante)
-                        : "-"}
-                    </td>
+                  <td>{evaluacion.id}</td>
 
-                    <td>
-                      {solicitud
-                        ? nombreConvocatoria(solicitud.convocatoria)
-                        : "-"}
-                    </td>
+                  <td>{evaluacion.solicitud}</td>
 
-                    <td>
+                  <td>
+
+                    {solicitud
+                      ? nombreEstudiante(solicitud.estudiante)
+                      : "-"}
+
+                  </td>
+
+                  <td>
+
+                    {solicitud
+                      ? nombreConvocatoria(solicitud.convocatoria)
+                      : "-"}
+
+                  </td>
+
+                  <td>
+
+                    <span
+                      className={`badge ${
+                        CLASES_ESTADO[evaluacion.resultado] ||
+                        "bg-secondary"
+                      }`}
+                    >
+
+                      {ESTADOS[evaluacion.resultado] ||
+                        evaluacion.resultado}
+
+                    </span>
+
+                  </td>
+
+                  <td>{evaluacion.puntaje}</td>
+
+                  <td>{evaluacion.observaciones}</td>
+
+                  <td>{evaluacion.fecha_evaluacion}</td>
+
+                  <td>
+
+                    {solicitud ? (
+
                       <span
                         className={`badge ${
-                          CLASES_ESTADO[evaluacion.resultado] ||
+                          CLASES_ESTADO[solicitud.estado] ||
                           "bg-secondary"
                         }`}
                       >
-                        {ESTADOS[evaluacion.resultado] ||
-                          evaluacion.resultado}
+
+                        {ESTADOS[solicitud.estado] ||
+                          solicitud.estado}
+
                       </span>
-                    </td>
 
-                    <td>{evaluacion.puntaje}</td>
-                    <td>{evaluacion.observaciones}</td>
-                    <td>{evaluacion.fecha_evaluacion}</td>
+                    ) : (
 
-                    <td>
-                      {solicitud ? (
-                        <span
-                          className={`badge ${
-                            CLASES_ESTADO[solicitud.estado] ||
-                            "bg-secondary"
-                          }`}
-                        >
-                          {ESTADOS[solicitud.estado] || solicitud.estado}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
+                      "-"
 
-                  </tr>
-                );
-              })}
-            </tbody>
+                    )}
 
-          </table>
-        </div>
+                  </td>
+
+                </tr>
+
+              );
+            })}
+
+          </Tabla>
+
+        </EstadoCarga>
+
       )}
 
     </div>

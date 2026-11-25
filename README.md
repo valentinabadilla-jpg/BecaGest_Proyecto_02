@@ -1,319 +1,708 @@
-BECAGEST
-SISTEMA DE GESTIÓN DE BECAS ESTUDIANTILES
 
-1. DESCRIPCIÓN DEL PROYECTO
+# BecaGest - Sistema de Gestión de Becas Estudiantiles
 
-BecaGest es una API REST desarrollada con Python, Django y Django REST Framework que permite gestionar el proceso de solicitud, evaluación y asignación de becas estudiantiles.
+Universidad de Costa Rica - Sede Regional del Pacífico  
+Informática Empresarial - Desarrollo de Software IV  
+Proyecto 02: Frontend con React para una API REST
 
-El sistema utiliza MySQL como base de datos y autenticación mediante tokens para controlar el acceso de los usuarios.
+## 1. Descripción
 
-El sistema está compuesto por dos partes:
+BecaGest es una aplicación web para la gestión de becas estudiantiles. Permite administrar estudiantes y convocatorias, registrar solicitudes, evaluar su resultado y asignar beneficios económicos.
 
-Backend: desarrollado con Python, Django y Django REST Framework. Procesa la información, aplica las reglas del sistema, valida los permisos y se comunica con la base de datos.
+El frontend es una aplicación de página única (SPA) que consume la API REST desarrollada en el Proyecto 1. Los datos se almacenan en MySQL y las reglas de negocio y los permisos se aplican en Django.
 
-Frontend: desarrollado con React, Vite y Bootstrap. Proporciona la interfaz desde la cual los usuarios inician sesión y utilizan los módulos disponibles.
+## 2. Tecnologías y requisitos
 
-La información se almacena en MySQL. El frontend se comunica con el backend mediante una API REST y utiliza tokens para acceder a las operaciones protegidas.
+- Python 3.14.
+- Django 5.2.19.
+- Django REST Framework.
+- MySQL Server 8.0.
+- Node.js y npm compatibles con la versión de Vite.
+- React.
+- JavaScript.
+- Vite.
+- React Router.
+- Bootstrap 5.
+- Git y GitHub.
+- Postman.
+- Autenticación mediante tokens.
 
-2. TECNOLOGÍAS UTILIZADAS
+Las dependencias del backend se encuentran en requirements.txt y las del frontend en package.json y package-lock.json.
 
-Backend
+## 3. Estructura del proyecto
 
-Python
-Django 6.1.2
-Django REST Framework 3.18.3
-MySQL 8
-mysqlclient 2.3.0
-python-dotenv 1.2.4
-Postman
-Visual Studio Code
+```text
+BecaGest_Proyecto_02/
+├── becagest/
+├── estudiantes/
+├── convocatorias/
+├── solicitudes/
+├── evaluaciones/
+├── asignaciones/
+├── frontend/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── pages/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── App.jsx
+│   │   ├── App.css
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── package.json
+│   ├── package-lock.json
+│   └── vite.config.js
+├── .env.example
+├── .gitignore
+├── manage.py
+├── requirements.txt
+└── README.md
+```
 
-Frontend
+### Organización del frontend
 
-React 19.3.1
-React DOM 19.3.1
-Vite 8.3.6
-React Router DOM 7.18.5
-Bootstrap 5.3.8
-JavaScript
+- components: componentes reutilizables, formularios, tablas, alertas, paginación y menú de navegación.
+- context: manejo compartido del token, perfil y estado de autenticación.
+- pages: pantallas correspondientes a los módulos del sistema.
+- routes: protección de rutas privadas.
+- services: configuración de la URL base y comunicación con la API REST.
+- assets: recursos utilizados por la aplicación.
 
-3. MÓDULOS DEL SISTEMA
+## 4. Instalación del backend
 
-Estudiantes: administra la información de los estudiantes.
+### 4.1. Clonar el repositorio
 
-Convocatorias: registra las convocatorias de becas, fechas y cupos disponibles.
+```powershell
+git clone https://github.com/valentinabadilla-jpg/BecaGest_Proyecto_02.git
+cd BecaGest_Proyecto_02
+```
 
-Solicitudes: permite registrar y consultar solicitudes de becas.
+### 4.2. Crear el entorno virtual
 
-Evaluaciones: permite aprobar o rechazar solicitudes.
+```powershell
+py -3.14 -m venv .venv
+```
 
-Asignaciones: administra las becas asignadas y sus montos mensuales.
+Activar el entorno virtual en Windows:
 
-3.1. FUNCIONALIDAD DE CADA MÓDULO
-
-1. Dashboard
-
-Es la pantalla principal del sistema y permite visualizar un resumen general de la gestión de becas. Presenta información relacionada con los estudiantes, convocatorias, solicitudes, evaluaciones y asignaciones. Facilita consultar el estado general del proceso sin tener que ingresar individualmente a cada módulo.
-
-2. Estudiantes
-
-Permite administrar la información de los estudiantes registrados en el sistema. Contiene los datos necesarios para identificarlos, como número de identificación, nombre, apellidos y carrera. Esta información se utiliza para relacionar a cada estudiante con sus respectivas solicitudes de beca.
-
-3. Convocatorias
-
-Permite crear, consultar y administrar las convocatorias de becas. En este módulo se registra el nombre de la convocatoria, su descripción, las fechas de inicio y finalización, los cupos disponibles y su estado. Su función es organizar las oportunidades de beca a las que pueden aplicar los estudiantes.
-
-4. Solicitudes
-
-Permite registrar y consultar las solicitudes de beca presentadas por los estudiantes. Cada solicitud se relaciona con un estudiante y una convocatoria. También permite dar seguimiento al estado de las solicitudes durante el proceso de revisión y aprobación.
-
-5. Evaluaciones
-
-Permite revisar las solicitudes presentadas por los estudiantes. El encargado puede consultar la información correspondiente y registrar el resultado de la evaluación, indicando si la solicitud es aprobada o rechazada, según las reglas establecidas en el sistema.
-
-6. Asignaciones
-
-Permite registrar y administrar las becas otorgadas a los estudiantes cuyas solicitudes fueron aprobadas. Contiene la información relacionada con la asignación y el monto de la beca. Este módulo permite consultar las becas concedidas y mantener un registro de los beneficios asignados.
-
-4. ROLES DE USUARIO
-
-Administrador: administra los registros y las convocatorias.
-
-Encargado: gestiona solicitudes, evaluaciones y asignaciones.
-
-Estudiante: consulta información permitida y registra sus propias solicitudes.
-
-La autenticación se realiza mediante tokens.
-
-5. INSTALACIÓN DEL PROYECTO
-
-5.1. Requisitos
-
-Tener instalado Python, MySQL Server, Visual Studio Code y Postman.
-
-5.2. Crear el entorno virtual
-
-Abrir una terminal en la carpeta principal del proyecto y ejecutar:
-
-py -m venv .venv
-
-Activar el entorno virtual:
-
+```powershell
 .\.venv\Scripts\Activate.ps1
+```
 
-5.3. Instalar dependencias
+Si PowerShell impide activar el entorno virtual, ejecutar:
 
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+### 4.3. Instalar dependencias
+
+```powershell
 python -m pip install -r requirements.txt
+```
 
-5.4. Instalar las dependencias del frontend
+### 4.4. Configurar la base de datos MySQL
 
-Abrir otra terminal, ingresar a la carpeta frontend e instalar las dependencias:
+Desde una sesión administrativa de MySQL, ejecutar los siguientes comandos si la base de datos y el usuario todavía no existen:
 
-cd frontend
-npm install
+```sql
+CREATE DATABASE IF NOT EXISTS becagest_db CHARACTER SET utf8mb4;
 
-Este comando instala las dependencias necesarias para ejecutar React y Vite.
+CREATE USER IF NOT EXISTS 'becagest_user'@'localhost'
+IDENTIFIED BY 'CAMBIAR_POR_CONTRASENA_LOCAL';
 
-6. CONFIGURACIÓN DE MYSQL
+GRANT ALL PRIVILEGES ON becagest_db.*
+TO 'becagest_user'@'localhost';
+```
 
-Abrir MySQL Workbench y crear la base de datos:
+La contraseña de ejemplo debe sustituirse por una contraseña local.
 
-CREATE DATABASE becagest_db
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
+### 4.5. Configurar las variables de entorno
 
-Crear un usuario de MySQL y concederle permisos para trabajar con becagest_db.
+Crear un archivo .env en la raíz del proyecto utilizando como referencia el archivo .env.example.
 
-Para ejecutar las pruebas automatizadas, el usuario también necesita permisos sobre la base de datos temporal de pruebas.
+```powershell
+Copy-Item .env.example .env
+```
 
-7. VARIABLES DE ENTORNO
+Configurar las siguientes variables:
 
-Copiar el archivo .env.example y crear un archivo llamado .env.
-
-Completar las variables:
-
+```dotenv
 DB_NAME=becagest_db
 DB_USER=becagest_user
-DB_PASSWORD=CONTRASENA_LOCAL_MYSQL
+DB_PASSWORD=CAMBIAR_POR_CONTRASENA_LOCAL
 DB_HOST=localhost
 DB_PORT=3306
+```
 
-Cada integrante debe colocar la contraseña correspondiente a su instalación de MySQL.
+Los valores deben corresponder a la configuración local de MySQL.
 
-El archivo .env contiene información privada y no debe subirse a GitHub.
+El archivo .env real no debe publicarse en GitHub, debido a que contiene credenciales de acceso a la base de datos.
 
+### 4.6. Aplicar las migraciones
 
-
-8. MIGRACIONES
-
-Ejecutar:
-
+```powershell
 python manage.py migrate
+```
 
-Verificar las migraciones:
+Verificar la configuración del proyecto:
 
+```powershell
+python manage.py check
+```
+
+Consultar el estado de las migraciones:
+
+```powershell
 python manage.py showmigrations
+```
 
-9. CREAR EL ADMINISTRADOR
+### 4.7. Crear un superusuario
 
-Ejecutar:
+Si todavía no existe un administrador, ejecutar:
 
+```powershell
 python manage.py createsuperuser
+```
 
-Iniciar el servidor:
+Completar los datos solicitados en la terminal.
 
+### 4.8. Ejecutar el backend
+
+```powershell
 python manage.py runserver
+```
 
-Acceder al administrador de Django:
+El servidor estará disponible en:
+
+http://127.0.0.1:8000/
+
+Panel de administración de Django:
 
 http://127.0.0.1:8000/admin/
 
-Desde el administrador se pueden crear los grupos Administrador, Encargado y Estudiante, asignar permisos y registrar usuarios de prueba.
+## 5. Configuración CORS
 
-10. EJECUTAR EL FRONTEND
+La comunicación entre React y Django requiere permitir las solicitudes provenientes del origen del frontend.
 
-El frontend debe iniciarse desde una terminal diferente a la que ejecuta Django.
+Para ello se utiliza django-cors-headers, incluido en las dependencias del proyecto.
+
+En el archivo becagest/settings.py se debe comprobar que INSTALLED_APPS incluya:
+
+```python
+'corsheaders',
+```
+
+En MIDDLEWARE debe encontrarse:
+
+```python
+'corsheaders.middleware.CorsMiddleware',
+```
+
+Este middleware debe colocarse antes de CommonMiddleware.
+
+Los orígenes locales permitidos pueden configurarse de la siguiente manera:
+
+```python
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
+```
+
+Si el frontend utiliza otro puerto, deberá ajustarse la configuración CORS o ejecutarse Vite en el puerto correspondiente.
+
+## 6. Instalación y ejecución del frontend
+
+Mantener el servidor Django en ejecución y abrir una segunda terminal en Visual Studio Code.
 
 Ingresar a la carpeta frontend:
 
+```powershell
 cd frontend
+```
 
-Si todavía no se instalaron las dependencias:
+Instalar las dependencias:
 
-npm install
+```powershell
+npm ci
+```
 
-Iniciar el servidor de desarrollo:
+### 6.1. URL de la API
 
+El archivo frontend/.env.example contiene la siguiente variable:
+
+```dotenv
+VITE_API_URL=http://127.0.0.1:8000
+```
+
+La URL base de la API se administra de forma centralizada en:
+
+```text
+frontend/src/services/api.js
+```
+
+Cuando no se define VITE_API_URL, el sistema utiliza como valor predeterminado:
+
+http://127.0.0.1:8000
+
+Por lo tanto, no es obligatorio crear un archivo .env adicional dentro del frontend para la ejecución local con esa dirección.
+
+Si se requiere utilizar otra URL, se puede crear un archivo .env dentro de frontend tomando como referencia su archivo .env.example.
+
+### 6.2. Ejecutar el frontend
+
+```powershell
 npm run dev
+```
 
-Vite mostrará la dirección local de la aplicación, normalmente:
+Ingresar desde el navegador a:
 
 http://localhost:5173/
 
-Abrir esa dirección en el navegador para utilizar BecaGest.
+### 6.3. Verificar la compilación
 
-10.1. Ejecución completa del sistema
+```powershell
+npm run build
+```
 
-Para utilizar BecaGest se deben mantener dos terminales abiertas:
+Este comando permite comprobar que la aplicación se compila correctamente para producción.
 
-Terminal 1 – Backend
+La carpeta dist generada durante la compilación no debe incluirse en el repositorio.
 
-Desde la carpeta principal:
+## 7. Usuarios de prueba y perfiles
 
-.\.venv\Scripts\Activate.ps1
-python manage.py runserver
+El sistema cuenta con tres perfiles principales: Administrador, Encargado y Estudiante.
 
-Terminal 2 – Frontend
+| Usuario de prueba | Perfil |
+|---|---|
+| maria | Administrador |
+| encargado1 | Encargado |
+| estudiante1 | Estudiante |
 
-Desde la carpeta principal:
+Las contraseñas se configuran localmente y no se incluyen en el repositorio.
 
-cd frontend
-npm run dev
+En una instalación nueva, los usuarios y grupos correspondientes deben crearse mediante el panel de administración de Django.
 
-Finalmente, abrir en el navegador:
+Los grupos utilizados son:
 
-http://localhost:5173/
+- Administrador.
+- Encargado.
+- Estudiante.
 
-MySQL también debe estar funcionando para que el sistema pueda consultar y guardar información.
+Se deben configurar los permisos correspondientes a cada perfil y asociar las cuentas de estudiantes con sus respectivas fichas.
 
-11. ENDPOINTS PRINCIPALES
+Las migraciones no crean automáticamente los usuarios ni los registros de demostración.
 
-POST /api/token/
-Obtener token de autenticación.
+### 7.1. Administrador
 
-GET /api/perfil/
-Consultar perfil del usuario.
+- Consultar el panel de control.
+- Registrar, consultar, editar y eliminar estudiantes.
+- Registrar, consultar, editar y eliminar convocatorias.
+- Gestionar solicitudes.
+- Registrar y consultar evaluaciones.
+- Gestionar asignaciones.
+- Consultar indicadores y reportes.
 
-GET /api/estudiantes/
-Listar estudiantes.
+### 7.2. Encargado
 
-POST /api/estudiantes/
-Registrar estudiante.
+- Consultar el panel de control.
+- Consultar estudiantes.
+- Consultar convocatorias.
+- Gestionar solicitudes según los permisos establecidos.
+- Registrar y consultar evaluaciones.
+- Gestionar asignaciones según los permisos establecidos.
 
-GET /api/convocatorias/
-Listar convocatorias.
+### 7.3. Estudiante
 
-POST /api/convocatorias/
-Registrar convocatoria.
+- Consultar su ficha personal.
+- Consultar convocatorias.
+- Registrar sus propias solicitudes.
+- Editar o eliminar sus solicitudes pendientes.
+- Consultar los resultados de sus evaluaciones.
+- Consultar sus propias asignaciones.
 
-GET /api/solicitudes/
-Listar solicitudes.
+Los permisos reales se aplican desde el backend, independientemente de las opciones visibles en el frontend.
 
-POST /api/solicitudes/
-Registrar solicitud.
+## 8. Módulos del sistema
 
-GET /api/evaluaciones/
-Listar evaluaciones.
+### 8.1. Panel de control
 
-POST /api/evaluaciones/
-Registrar evaluación.
+El panel de control presenta información obtenida directamente de la API REST.
 
-GET /api/asignaciones/
-Listar asignaciones.
+Los indicadores disponibles son:
 
-POST /api/asignaciones/
-Registrar asignación.
+- Total de estudiantes.
+- Convocatorias activas.
+- Solicitudes pendientes.
+- Solicitudes aprobadas.
+- Evaluaciones realizadas.
+- Asignaciones no canceladas.
+- Monto mensual total.
 
+También se muestran los siguientes resúmenes:
+
+- Solicitudes por convocatoria.
+- Solicitudes por estado.
+- Estudiantes por carrera.
+
+La información se obtiene mediante:
+
+```http
 GET /api/reportes/resumen/
-Consultar resumen del sistema.
+```
 
-GET /api/sesion/
-Consultar contador de sesión.
+### 8.2. Estudiantes
 
-Los endpoints de detalle utilizan un identificador, por ejemplo:
+Permite administrar la información de los estudiantes registrados en el sistema.
 
-/api/convocatorias/1/
+Funcionalidades:
 
-Las operaciones de consulta, actualización y eliminación dependen de los permisos asignados a cada usuario.
+- Registrar estudiantes.
+- Consultar estudiantes.
+- Editar estudiantes.
+- Eliminar estudiantes.
+- Buscar por nombre.
+- Filtrar por carrera.
+- Filtrar por estado activo o inactivo.
+- Combinar filtros.
+- Paginar los resultados.
 
-12. PRUEBAS AUTOMATIZADAS
+El registro de estudiantes requiere seleccionar una cuenta de Django perteneciente al grupo Estudiante que todavía no tenga una ficha asociada.
 
-El proyecto cuenta con 20 pruebas automatizadas distribuidas entre los cinco módulos.
+El estudiante únicamente puede consultar su propia ficha.
 
-Para ejecutar las pruebas:
+### 8.3. Convocatorias
 
+Permite administrar las oportunidades de becas disponibles para los estudiantes.
+
+Funcionalidades:
+
+- Registrar convocatorias.
+- Consultar convocatorias.
+- Editar convocatorias.
+- Eliminar convocatorias.
+- Buscar por nombre o descripción.
+- Filtrar convocatorias activas e inactivas.
+- Filtrar convocatorias abiertas actualmente.
+- Combinar filtros.
+- Ordenar por ID, nombre o fecha de finalización.
+- Paginar los resultados.
+
+Validaciones:
+
+- Los cupos deben ser mayores que cero.
+- La fecha de finalización no puede ser anterior a la fecha de inicio.
+- Los campos obligatorios deben completarse.
+
+### 8.4. Solicitudes
+
+Permite registrar y dar seguimiento a las solicitudes de beca.
+
+Funcionalidades:
+
+- Registrar solicitudes.
+- Consultar solicitudes.
+- Editar solicitudes pendientes.
+- Eliminar solicitudes pendientes.
+- Seleccionar estudiantes desde la API.
+- Seleccionar convocatorias abiertas desde la API.
+- Consultar el estado de cada solicitud.
+
+Estados disponibles:
+
+- PENDIENTE.
+- APROBADA.
+- RECHAZADA.
+
+Validaciones:
+
+- No se permiten solicitudes duplicadas para un mismo estudiante y convocatoria.
+- El motivo debe contener al menos 10 caracteres en el formulario.
+- Las solicitudes evaluadas no pueden modificarse ni eliminarse mediante el flujo ordinario.
+- Los estudiantes únicamente pueden gestionar sus propias solicitudes, según las restricciones del backend.
+
+### 8.5. Evaluaciones
+
+Permite que el personal autorizado revise las solicitudes de beca.
+
+Funcionalidades:
+
+- Registrar evaluaciones.
+- Consultar evaluaciones.
+- Seleccionar solicitudes registradas.
+- Registrar el resultado.
+- Registrar el puntaje.
+- Registrar observaciones.
+- Consultar el cambio de estado de la solicitud.
+
+Resultados disponibles:
+
+- APROBADA.
+- RECHAZADA.
+
+Validaciones:
+
+- El puntaje debe estar entre 0 y 100.
+- Cada solicitud puede tener únicamente una evaluación.
+- El registro de evaluaciones corresponde al personal autorizado.
+
+Cuando se registra una evaluación, el estado de la solicitud cambia según el resultado.
+
+El estudiante puede consultar sus propias evaluaciones, pero no puede registrar nuevas evaluaciones.
+
+### 8.6. Asignaciones
+
+Permite registrar los beneficios económicos correspondientes a las solicitudes aprobadas.
+
+Funcionalidades:
+
+- Crear asignaciones.
+- Consultar asignaciones.
+- Consultar el detalle de una asignación.
+- Editar asignaciones.
+- Eliminar asignaciones.
+- Filtrar por estado.
+- Consultar el monto mensual.
+
+Estados disponibles:
+
+- ACTIVA.
+- FINALIZADA.
+- CANCELADA.
+
+Validaciones:
+
+- Solo se pueden asignar beneficios a evaluaciones aprobadas.
+- No se debe asignar más de una beca a una misma evaluación simultáneamente.
+- El monto mensual debe ser mayor que cero.
+
+Los estudiantes únicamente pueden consultar sus propias asignaciones y sus detalles.
+
+### 8.7. Justificación del módulo sin CRUD completo
+
+Los módulos de Estudiantes, Convocatorias, Solicitudes y Asignaciones cuentan con operaciones de creación, consulta, actualización y eliminación, respetando los permisos y las reglas de negocio.
+
+El módulo de Evaluaciones permite registrar y consultar resultados.
+
+No se ofrecen operaciones de edición o eliminación desde la interfaz, debido a que cada solicitud admite una única evaluación y su resultado determina el estado de la solicitud y la posibilidad de generar una asignación.
+
+Esta restricción permite mantener la integridad y coherencia del proceso de gestión de becas.
+
+### 8.8. Flujo de negocio
+
+1. Se registra un estudiante.
+2. Se publica una convocatoria de beca.
+3. Se registra una solicitud.
+4. La solicitud inicia en estado pendiente.
+5. El personal autorizado evalúa la solicitud.
+6. La solicitud cambia a aprobada o rechazada.
+7. Si la evaluación es aprobada, se puede registrar una asignación económica.
+8. El panel de control refleja los cambios realizados en el sistema.
+
+## 9. Autenticación y comunicación con la API
+
+El sistema utiliza autenticación mediante tokens de Django REST Framework.
+
+El inicio de sesión se realiza mediante:
+
+```http
+POST /api/token/
+```
+
+Una vez obtenido el token, se consulta la información del perfil mediante:
+
+```http
+GET /api/perfil/
+```
+
+Las solicitudes protegidas utilizan el siguiente encabezado:
+
+```http
+Authorization: Token <token>
+```
+
+El estado de autenticación se administra mediante React Context.
+
+El token y el perfil se almacenan en el navegador mediante localStorage utilizando las siguientes claves:
+
+- becagest_token.
+- becagest_perfil.
+
+Las rutas privadas impiden el acceso a las pantallas protegidas cuando no existe una sesión local.
+
+Al cerrar sesión, se eliminan ambos valores del almacenamiento local y se redirige al usuario al formulario de inicio de sesión.
+
+La autorización de las operaciones se realiza en Django.
+
+La URL base y las llamadas HTTP se centralizan en frontend/src/services/api.js.
+
+## 10. Validaciones y manejo de errores
+
+La aplicación presenta mensajes comprensibles para informar al usuario sobre el resultado de las operaciones.
+
+Se incluyen:
+
+- Mensajes de operaciones exitosas.
+- Mensajes de validación.
+- Mensajes de acceso denegado.
+- Mensajes de errores de conexión.
+- Indicadores de carga.
+- Mensajes cuando no existen registros.
+- Confirmaciones antes de eliminar registros.
+
+### 10.1. Códigos HTTP
+
+| Código | Significado |
+|---|---|
+| 200 | Solicitud realizada correctamente. |
+| 201 | Registro creado correctamente. |
+| 204 | Operación exitosa sin contenido en la respuesta. |
+| 400 | Datos incorrectos o incumplimiento de validaciones. |
+| 401 | Usuario sin autenticación o token inválido. |
+| 403 | Usuario autenticado sin permisos suficientes. |
+| 404 | Recurso no encontrado. |
+| 409 | Conflicto con una regla de negocio. |
+
+### 10.2. Errores comprobados mediante Postman
+
+| Código HTTP | Prueba realizada | Resultado |
+|---|---|---|
+| 400 | Crear una convocatoria con cero cupos. | Rechazo de los datos incorrectos. |
+| 401 | Consultar estudiantes sin token. | Acceso denegado por falta de autenticación. |
+| 401 | Consultar estudiantes con un token inválido. | Token rechazado. |
+| 403 | Crear una convocatoria con un usuario sin permisos. | Operación denegada. |
+| 403 | Consultar la información de otro estudiante. | Acceso denegado. |
+| 404 | Consultar un estudiante inexistente. | Estudiante no encontrado. |
+| 409 | Modificar una solicitud previamente evaluada. | Operación rechazada. |
+
+También se comprobó el manejo de errores de conexión al detener el servidor Django mientras el frontend se encontraba en ejecución.
+
+## 11. Pruebas del sistema
+
+### 11.1. Pruebas automatizadas
+
+Para ejecutar las pruebas automatizadas del backend, ingresar a la carpeta principal del proyecto con el entorno virtual activo y ejecutar:
+
+```powershell
 python manage.py test
+```
 
-Django utiliza una base de datos temporal para realizar las pruebas sin modificar los registros principales.
+Resultado obtenido:
 
-13. PRUEBAS MANUALES CON POSTMAN
+```text
+Found 20 test(s).
+System check identified no issues (0 silenced).
 
-El sistema se prueba mediante Postman para verificar las operaciones CRUD, autenticación, autorización, filtros, búsquedas, ordenamiento, paginación y reglas de negocio.
+Ran 20 tests in 20.926s
 
-Se comprueban los siguientes códigos HTTP:
+OK
+```
 
-200 OK
-201 Created
-204 No Content
-400 Bad Request
-401 Unauthorized
-403 Forbidden
-404 Not Found
-409 Conflict
+Resumen:
 
-14. FLUJO DE FUNCIONAMIENTO
+- Total de pruebas ejecutadas: 20.
+- Pruebas exitosas: 20.
+- Pruebas fallidas: 0.
+- Errores: 0.
 
-1. El administrador registra una convocatoria de becas.
-2. El estudiante registra una solicitud.
-3. El encargado evalúa la solicitud.
-4. El sistema actualiza el estado de la solicitud.
-5. Si la solicitud es aprobada y existen cupos disponibles, se registra la asignación.
-6. El encargado puede consultar los reportes del sistema.
+Django utiliza una base de datos temporal para ejecutar las pruebas.
 
-15. SEGURIDAD
+Si el usuario de MySQL no dispone de permisos para crear la base de pruebas, se pueden otorgar los permisos correspondientes desde una sesión administrativa.
 
-BecaGest utiliza autenticación mediante tokens y tres grupos de usuarios.
+Por ejemplo, para el nombre predeterminado de la base de pruebas:
 
-Los permisos permiten controlar las operaciones que puede realizar cada usuario.
+```sql
+GRANT ALL PRIVILEGES ON test_becagest_db.*
+TO 'becagest_user'@'localhost';
+```
 
-Las credenciales de conexión a MySQL se almacenan en el archivo .env.
+### 11.2. Pruebas manuales
 
-El archivo .gitignore debe impedir que las contraseñas, tokens y archivos privados se incluyan en el repositorio.
+Se realizaron pruebas manuales de las siguientes funcionalidades:
 
-16. LIMITACIONES
+- Inicio de sesión correcto.
+- Inicio de sesión con credenciales incorrectas.
+- Navegación entre módulos.
+- Registro de estudiantes.
+- Edición de estudiantes.
+- Eliminación de estudiantes.
+- Búsqueda y filtros combinados de estudiantes.
+- Paginación de estudiantes.
+- Registro de convocatorias.
+- Edición de convocatorias.
+- Eliminación de convocatorias.
+- Validación de fechas y cupos.
+- Búsqueda, filtros y ordenamiento de convocatorias.
+- Paginación de convocatorias.
+- Registro de solicitudes.
+- Validación de solicitudes duplicadas.
+- Edición y eliminación de solicitudes pendientes.
+- Registro de evaluaciones aprobadas y rechazadas.
+- Validación de puntajes.
+- Validación de evaluaciones duplicadas.
+- Actualización del estado de las solicitudes.
+- Registro de asignaciones.
+- Consulta del detalle de asignaciones.
+- Edición y eliminación de asignaciones.
+- Filtros por estado de asignaciones.
+- Validación de montos.
+- Actualización de los indicadores del panel de control.
+- Acceso con el perfil Administrador.
+- Acceso con el perfil Encargado.
+- Acceso con el perfil Estudiante.
+- Restricciones de acceso y permisos.
+- Manejo de errores HTTP.
+- Manejo de errores de conexión.
+- Cierre de sesión.
+- Eliminación del token y perfil del almacenamiento local.
+- Protección de rutas privadas.
+- Diseño adaptable.
 
-BecaGest es un proyecto académico desarrollado como una API REST.
+Las evidencias de las pruebas se presentan mediante capturas de pantalla y matrices de resultados.
 
-No cuenta con una interfaz web propia para estudiantes. Sus funcionalidades se prueban mediante Postman y el administrador de Django.
+### 11.3. Diseño adaptable
 
-El servidor de desarrollo de Django se utiliza únicamente para pruebas locales.
+La interfaz utiliza Bootstrap 5 para adaptar sus componentes a diferentes tamaños de pantalla.
+
+Se comprobó el comportamiento de la aplicación mediante las herramientas de desarrollo del navegador, utilizando una vista de dispositivo móvil.
+
+Los formularios, tarjetas, botones y menú de navegación se ajustan al espacio disponible.
+
+Las tablas utilizan contenedores responsivos que permiten el desplazamiento horizontal cuando su contenido supera el ancho de la pantalla.
+
+## 12. Limitaciones y consideraciones
+
+- La aplicación está destinada a un entorno académico de desarrollo local.
+- Los servidores de desarrollo de Django y Vite no deben utilizarse como servidores de producción.
+- El cierre de sesión elimina el token y el perfil del almacenamiento local del navegador, pero no revoca el token en el servidor.
+- Un token obtenido previamente puede continuar siendo válido hasta que sea eliminado o invalidado en Django.
+- La creación de cuentas de usuario se realiza mediante el panel de administración de Django.
+- Las solicitudes evaluadas únicamente pueden consultarse mediante el flujo ordinario.
+- Las evaluaciones no pueden editarse ni eliminarse desde la interfaz.
+- La disponibilidad de las convocatorias depende de sus fechas de vigencia.
+- Para realizar nuevas demostraciones, puede ser necesario actualizar las fechas de las convocatorias.
+- Los datos de demostración deben registrarse en la base de datos local.
+- Para una implementación en producción se requiere revisar el almacenamiento de tokens, el uso de HTTPS y la administración de secretos.
+
+Por motivos de seguridad y organización, no deben incluirse en el repositorio:
+
+- Archivos .env reales.
+- Contraseñas.
+- Tokens de autenticación.
+- Entornos virtuales.
+- Carpetas node_modules.
+- Carpetas dist.
+- Archivos __pycache__.
+- Archivos temporales generados durante el desarrollo.
+
+## 13. Repositorio del proyecto
+
+El código fuente del proyecto se encuentra disponible en:
+
+https://github.com/valentinabadilla-jpg/BecaGest_Proyecto_02

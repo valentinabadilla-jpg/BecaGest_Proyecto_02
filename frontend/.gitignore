@@ -1,1 +1,17 @@
-# Se incluyen todos los archivos
+# Dependencias de Node
+node_modules/
+
+# Archivos de compilacion
+dist/
+dist-ssr/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Archivos de registro
+*.log
+
+# Archivos del editor
+.vscode/

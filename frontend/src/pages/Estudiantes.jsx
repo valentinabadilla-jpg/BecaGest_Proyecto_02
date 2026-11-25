@@ -1,9 +1,11 @@
-
 import { useEffect, useState } from "react";
+import { BASE_URL, peticionAPI } from "../services/api";
 
-const BASE_URL = (
-  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
-).replace(/\/$/, "");
+import Alertas from "../components/Alertas";
+import EstadoCarga from "../components/EstadoCarga";
+import Paginacion from "../components/Paginacion";
+import Tabla from "../components/Tabla";
+import Formulario from "../components/Formulario";
 
 const API_URL = `${BASE_URL}/api/estudiantes/`;
 
@@ -80,7 +82,7 @@ export default function Estudiantes({
   const [actualizar, setActualizar] = useState(0);
   const [refrescarUsuarios, setRefrescarUsuarios] = useState(0);
 
-  // SOLO EL ADMINISTRADOR CONSULTA LOS USUARIOS DISPONIBLES
+  // CARGAR USUARIOS DISPONIBLES
 
   useEffect(() => {
     if (!token || !esAdmin) return;
@@ -92,7 +94,7 @@ export default function Estudiantes({
       setErrorUsuarios("");
 
       try {
-        const respuesta = await fetch(
+        const respuesta = await peticionAPI(
           `${API_URL}usuarios-disponibles/`,
           {
             headers: {
@@ -135,7 +137,7 @@ export default function Estudiantes({
 
   }, [token, esAdmin, actualizar, refrescarUsuarios]);
 
-  // CARGAR ESTUDIANTES CON FILTROS Y PAGINACION
+  // CARGAR ESTUDIANTES
 
   useEffect(() => {
     if (!token) return;
@@ -148,9 +150,11 @@ export default function Estudiantes({
 
       try {
         const parametros = new URLSearchParams();
+
         parametros.set("page", pagina);
 
         if (esEncargado) {
+
           if (buscar.trim()) {
             parametros.set("buscar", buscar.trim());
           }
@@ -164,7 +168,7 @@ export default function Estudiantes({
           }
         }
 
-        const respuesta = await fetch(
+        const respuesta = await peticionAPI(
           `${API_URL}?${parametros}`,
           {
             headers: {
@@ -225,7 +229,7 @@ export default function Estudiantes({
     actualizar
   ]);
 
-  // CAMBIAR LOS CAMPOS DEL FORMULARIO
+  // CAMBIAR CAMPOS DEL FORMULARIO
 
   function cambio(e) {
     const { name, value, type, checked } = e.target;
@@ -259,6 +263,7 @@ export default function Estudiantes({
 
     setError("");
     setMensaje("");
+
     window.scrollTo(0, 0);
   }
 
@@ -293,14 +298,16 @@ export default function Estudiantes({
         datosEnviar.usuario = Number(formulario.usuario);
       }
 
-      const respuesta = await fetch(
+      const respuesta = await peticionAPI(
         editando ? `${API_URL}${editandoId}/` : API_URL,
         {
           method: editando ? "PATCH" : "POST",
+
           headers: {
             "Content-Type": "application/json",
             Authorization: `Token ${token}`
           },
+
           body: JSON.stringify(datosEnviar)
         }
       );
@@ -335,6 +342,7 @@ export default function Estudiantes({
   // ELIMINAR ESTUDIANTE
 
   async function eliminar(id) {
+
     if (
       !esAdmin ||
       !window.confirm("¿Deseas eliminar este estudiante?")
@@ -347,12 +355,16 @@ export default function Estudiantes({
     setMensaje("");
 
     try {
-      const respuesta = await fetch(`${API_URL}${id}/`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Token ${token}`
+      const respuesta = await peticionAPI(
+        `${API_URL}${id}/`,
+        {
+          method: "DELETE",
+
+          headers: {
+            Authorization: `Token ${token}`
+          }
         }
-      });
+      );
 
       if (!respuesta.ok) {
         const datos = await respuesta.json().catch(() => ({}));
@@ -380,8 +392,25 @@ export default function Estudiantes({
     }
   }
 
+  // COLUMNAS DE LA TABLA
+
+  const columnas = [
+    "ID",
+    "Identificación",
+    "Nombre",
+    "Apellidos",
+    "Carrera",
+    "Activo"
+  ];
+
+  if (esAdmin) {
+    columnas.push("Acciones");
+  }
+
   return (
+
     <div className="container mt-4 mb-5">
+
       <h2>Estudiantes</h2>
 
       <p>
@@ -390,202 +419,214 @@ export default function Estudiantes({
           : "Mi ficha de estudiante"}
       </p>
 
-      {error && (
-        <div className="alert alert-danger">{error}</div>
-      )}
+      {/* COMPONENTE DE ALERTAS */}
 
-      {errorLista && (
-        <div className="alert alert-danger">{errorLista}</div>
-      )}
+      <Alertas error={error} />
 
-      {mensaje && (
-        <div className="alert alert-success">{mensaje}</div>
-      )}
+      <Alertas
+        error={errorLista}
+        mensaje={mensaje}
+      />
 
-      {/* FORMULARIO SOLO PARA ADMINISTRADOR */}
+      {/* COMPONENTE REUTILIZABLE DE FORMULARIO */}
 
       {esAdmin && (
-        <div className="card p-3 mb-4">
-          <h4>
-            {editandoId !== null
+
+        <Formulario
+          titulo={
+            editandoId !== null
               ? "Editar estudiante"
-              : "Registrar estudiante"}
-          </h4>
+              : "Registrar estudiante"
+          }
+          onSubmit={guardar}
+        >
 
-          <form onSubmit={guardar}>
-            <label className="form-label">
-              Usuario de Django
-            </label>
+          <label className="form-label">
+            Usuario de Django
+          </label>
 
-            {editandoId === null ? (
-              <>
-                <select
-                  className="form-select mb-2"
-                  name="usuario"
-                  value={formulario.usuario}
-                  onChange={cambio}
-                  disabled={
-                    cargandoUsuarios || !!errorUsuarios
-                  }
-                  required
-                >
-                  <option value="">
-                    Seleccionar usuario
+          {editandoId === null ? (
+
+            <>
+
+              <select
+                className="form-select mb-2"
+                name="usuario"
+                value={formulario.usuario}
+                onChange={cambio}
+                disabled={
+                  cargandoUsuarios || !!errorUsuarios
+                }
+                required
+              >
+
+                <option value="">
+                  Seleccionar usuario
+                </option>
+
+                {usuarios.map(u => (
+
+                  <option
+                    key={u.id}
+                    value={u.id}
+                  >
+                    {u.username}
                   </option>
 
-                  {usuarios.map(u => (
-                    <option
-                      key={u.id}
-                      value={u.id}
-                    >
-                      {u.username}
-                    </option>
-                  ))}
-                </select>
+                ))}
 
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm mb-3 d-block"
-                  onClick={() =>
-                    setRefrescarUsuarios(n => n + 1)
-                  }
-                  disabled={cargandoUsuarios}
-                >
-                  Actualizar lista de usuarios
-                </button>
+              </select>
 
-                {errorUsuarios && (
-                  <div className="alert alert-danger">
-                    {errorUsuarios}
-                  </div>
-                )}
-
-                {!cargandoUsuarios &&
-                  !errorUsuarios &&
-                  usuarios.length === 0 && (
-                    <div className="alert alert-info">
-                      No hay usuarios disponibles.
-                      Crea un usuario en Django y asígnalo
-                      al grupo Estudiante.
-                    </div>
-                  )}
-              </>
-            ) : (
-              <input
-                className="form-control mb-2"
-                value={`Usuario asignado (ID ${formulario.usuario})`}
-                readOnly
-              />
-            )}
-
-            <label className="form-label d-block">
-              Identificación
-            </label>
-
-            <input
-              className="form-control mb-2"
-              name="identificacion"
-              value={formulario.identificacion}
-              onChange={cambio}
-              minLength="5"
-              maxLength="30"
-              required
-            />
-
-            <label className="form-label">
-              Nombre
-            </label>
-
-            <input
-              className="form-control mb-2"
-              name="nombre"
-              value={formulario.nombre}
-              onChange={cambio}
-              minLength="2"
-              maxLength="100"
-              required
-            />
-
-            <label className="form-label">
-              Apellidos
-            </label>
-
-            <input
-              className="form-control mb-2"
-              name="apellidos"
-              value={formulario.apellidos}
-              onChange={cambio}
-              maxLength="100"
-              required
-            />
-
-            <label className="form-label">
-              Carrera
-            </label>
-
-            <input
-              className="form-control mb-2"
-              name="carrera"
-              value={formulario.carrera}
-              onChange={cambio}
-              maxLength="120"
-              required
-            />
-
-            <div className="form-check mb-3">
-              <input
-                id="estudiante-activo"
-                type="checkbox"
-                className="form-check-input"
-                name="activo"
-                checked={formulario.activo}
-                onChange={cambio}
-              />
-
-              <label
-                className="form-check-label"
-                htmlFor="estudiante-activo"
-              >
-                Estudiante activo
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={
-                procesando ||
-                (editandoId === null &&
-                  (cargandoUsuarios ||
-                    !usuarios.length ||
-                    !!errorUsuarios))
-              }
-            >
-              {procesando
-                ? "Procesando..."
-                : editandoId !== null
-                  ? "Actualizar"
-                  : "Guardar estudiante"}
-            </button>
-
-            {editandoId !== null && (
               <button
                 type="button"
-                className="btn btn-secondary ms-2"
-                onClick={cancelar}
-                disabled={procesando}
+                className="btn btn-outline-secondary btn-sm mb-3 d-block"
+                onClick={() =>
+                  setRefrescarUsuarios(n => n + 1)
+                }
+                disabled={cargandoUsuarios}
               >
-                Cancelar
+                Actualizar lista de usuarios
               </button>
-            )}
-          </form>
-        </div>
+
+              <Alertas error={errorUsuarios} />
+
+              <EstadoCarga
+                cargando={cargandoUsuarios}
+                error={errorUsuarios}
+                vacio={usuarios.length === 0}
+                mensajeCarga="Cargando usuarios..."
+                mensajeVacio="No hay usuarios disponibles. Crea un usuario en Django y asígnalo al grupo Estudiante."
+              />
+
+            </>
+
+          ) : (
+
+            <input
+              className="form-control mb-2"
+              value={`Usuario asignado (ID ${formulario.usuario})`}
+              readOnly
+            />
+
+          )}
+
+          <label className="form-label d-block">
+            Identificación
+          </label>
+
+          <input
+            className="form-control mb-2"
+            name="identificacion"
+            value={formulario.identificacion}
+            onChange={cambio}
+            minLength="5"
+            maxLength="30"
+            required
+          />
+
+          <label className="form-label">
+            Nombre
+          </label>
+
+          <input
+            className="form-control mb-2"
+            name="nombre"
+            value={formulario.nombre}
+            onChange={cambio}
+            minLength="2"
+            maxLength="100"
+            required
+          />
+
+          <label className="form-label">
+            Apellidos
+          </label>
+
+          <input
+            className="form-control mb-2"
+            name="apellidos"
+            value={formulario.apellidos}
+            onChange={cambio}
+            maxLength="100"
+            required
+          />
+
+          <label className="form-label">
+            Carrera
+          </label>
+
+          <input
+            className="form-control mb-2"
+            name="carrera"
+            value={formulario.carrera}
+            onChange={cambio}
+            maxLength="120"
+            required
+          />
+
+          <div className="form-check mb-3">
+
+            <input
+              id="estudiante-activo"
+              type="checkbox"
+              className="form-check-input"
+              name="activo"
+              checked={formulario.activo}
+              onChange={cambio}
+            />
+
+            <label
+              className="form-check-label"
+              htmlFor="estudiante-activo"
+            >
+              Estudiante activo
+            </label>
+
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={
+              procesando ||
+              (editandoId === null &&
+                (cargandoUsuarios ||
+                  !usuarios.length ||
+                  !!errorUsuarios))
+            }
+          >
+
+            {procesando
+              ? "Procesando..."
+              : editandoId !== null
+                ? "Actualizar"
+                : "Guardar estudiante"}
+
+          </button>
+
+          {editandoId !== null && (
+
+            <button
+              type="button"
+              className="btn btn-secondary ms-2"
+              onClick={cancelar}
+              disabled={procesando}
+            >
+              Cancelar
+            </button>
+
+          )}
+
+        </Formulario>
+
       )}
 
-      {/* FILTROS SOLO PARA ADMINISTRADOR Y ENCARGADO */}
+      {/* FILTROS */}
 
       {esEncargado && (
+
         <div className="card p-3 mb-4">
+
           <h4>Buscar y filtrar estudiantes</h4>
 
           <label className="form-label">
@@ -628,11 +669,15 @@ export default function Estudiantes({
               setPagina(1);
             }}
           >
+
             <option value="">Todos</option>
             <option value="true">Activos</option>
             <option value="false">Inactivos</option>
+
           </select>
+
         </div>
+
       )}
 
       {/* LISTA DE ESTUDIANTES */}
@@ -645,93 +690,80 @@ export default function Estudiantes({
 
       <p>Total de estudiantes encontrados: {total}</p>
 
-      {cargando ? (
-        <p>Cargando estudiantes...</p>
+      {/* COMPONENTE REUTILIZABLE DE ESTADO DE CARGA */}
 
-      ) : errorLista ? (
-        <p>No se pudieron cargar los estudiantes.</p>
+      <EstadoCarga
+        cargando={cargando}
+        error={errorLista}
+        vacio={estudiantes.length === 0}
+        mensajeCarga="Cargando estudiantes..."
+        mensajeVacio="No hay estudiantes para mostrar."
+      >
 
-      ) : estudiantes.length === 0 ? (
-        <div className="alert alert-info">
-          No hay estudiantes para mostrar.
-        </div>
+        {/* COMPONENTE REUTILIZABLE DE TABLA */}
 
-      ) : (
-        <div className="table-responsive">
-          <table className="table table-striped table-bordered">
-            <thead className="table-dark">
-              <tr>
-                <th>ID</th>
-                <th>Identificación</th>
-                <th>Nombre</th>
-                <th>Apellidos</th>
-                <th>Carrera</th>
-                <th>Activo</th>
-                {esAdmin && <th>Acciones</th>}
-              </tr>
-            </thead>
+        <Tabla columnas={columnas}>
 
-            <tbody>
-              {estudiantes.map(estudiante => (
-                <tr key={estudiante.id}>
-                  <td>{estudiante.id}</td>
-                  <td>{estudiante.identificacion}</td>
-                  <td>{estudiante.nombre}</td>
-                  <td>{estudiante.apellidos}</td>
-                  <td>{estudiante.carrera}</td>
-                  <td>
-                    {estudiante.activo ? "Sí" : "No"}
-                  </td>
+          {estudiantes.map(estudiante => (
 
-                  {esAdmin && (
-                    <td>
-                      <button
-                        className="btn btn-warning btn-sm me-2 mb-1"
-                        onClick={() => editar(estudiante)}
-                        disabled={procesando}
-                      >
-                        Editar
-                      </button>
+            <tr key={estudiante.id}>
 
-                      <button
-                        className="btn btn-danger btn-sm mb-1"
-                        onClick={() =>
-                          eliminar(estudiante.id)
-                        }
-                        disabled={procesando}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              <td>{estudiante.id}</td>
+              <td>{estudiante.identificacion}</td>
+              <td>{estudiante.nombre}</td>
+              <td>{estudiante.apellidos}</td>
+              <td>{estudiante.carrera}</td>
 
-      {/* PAGINACION */}
+              <td>
+                {estudiante.activo ? "Sí" : "No"}
+              </td>
 
-      <div className="d-flex align-items-center gap-2 mt-3">
-        <button
-          className="btn btn-secondary"
-          disabled={!anterior || cargando}
-          onClick={() => setPagina(p => p - 1)}
-        >
-          Anterior
-        </button>
+              {esAdmin && (
 
-        <span>Página {pagina}</span>
+                <td>
 
-        <button
-          className="btn btn-primary"
-          disabled={!siguiente || cargando}
-          onClick={() => setPagina(p => p + 1)}
-        >
-          Siguiente
-        </button>
-      </div>
+                  <button
+                    className="btn btn-warning btn-sm me-2 mb-1"
+                    onClick={() => editar(estudiante)}
+                    disabled={procesando}
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    className="btn btn-danger btn-sm mb-1"
+                    onClick={() =>
+                      eliminar(estudiante.id)
+                    }
+                    disabled={procesando}
+                  >
+                    Eliminar
+                  </button>
+
+                </td>
+
+              )}
+
+            </tr>
+
+          ))}
+
+        </Tabla>
+
+      </EstadoCarga>
+
+      {/* COMPONENTE REUTILIZABLE DE PAGINACION */}
+
+      <Paginacion
+        pagina={pagina}
+        anterior={anterior}
+        siguiente={siguiente}
+        cargando={cargando}
+        onAnterior={() => setPagina(p => p - 1)}
+        onSiguiente={() => setPagina(p => p + 1)}
+      />
+
     </div>
+
   );
 }
