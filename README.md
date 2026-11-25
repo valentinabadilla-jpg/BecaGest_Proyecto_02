@@ -690,17 +690,6 @@ Las tablas utilizan contenedores responsivos que permiten el desplazamiento hori
 - Los datos de demostración deben registrarse en la base de datos local.
 - Para una implementación en producción se requiere revisar el almacenamiento de tokens, el uso de HTTPS y la administración de secretos.
 
-Por motivos de seguridad y organización, no deben incluirse en el repositorio:
-
-- Archivos .env reales.
-- Contraseñas.
-- Tokens de autenticación.
-- Entornos virtuales.
-- Carpetas node_modules.
-- Carpetas dist.
-- Archivos __pycache__.
-- Archivos temporales generados durante el desarrollo.
-
 ## 13. Repositorio del proyecto
 
 El código fuente del proyecto se encuentra disponible en:
